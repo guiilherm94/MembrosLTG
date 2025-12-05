@@ -173,34 +173,27 @@ export default function CoursePage() {
         <div className="flex-1 flex flex-col overflow-hidden">
           {currentLesson && (
             <>
-              <div className="bg-black aspect-video relative w-full flex-shrink-0">
-                {currentLesson.video_type === 'youtube' && currentLesson.video_url && (
-                  <iframe
-                    src={currentLesson.video_url}
-                    className="absolute top-0 left-0 w-full h-full"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                )}
-                {currentLesson.video_type === 'drive-video' && currentLesson.video_url && (
-                  <iframe
-                    src={currentLesson.video_url}
-                    className="absolute top-0 left-0 w-full h-full"
-                    allow="autoplay"
-                    allowFullScreen
-                  />
-                )}
-                {!currentLesson.video_url && (
-                  <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-zinc-900">
-                    <div className="text-center">
-                      <svg className="w-24 h-24 text-zinc-700 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-                      </svg>
-                      <p className="text-gray-500">Sem vídeo disponível</p>
-                    </div>
-                  </div>
-                )}
-              </div>
+              {/* Só mostra o container de vídeo se houver vídeo */}
+              {currentLesson.video_url && (
+                <div className="bg-black aspect-video relative w-full flex-shrink-0">
+                  {currentLesson.video_type === 'youtube' && (
+                    <iframe
+                      src={currentLesson.video_url}
+                      className="absolute top-0 left-0 w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  )}
+                  {currentLesson.video_type === 'drive-video' && (
+                    <iframe
+                      src={currentLesson.video_url}
+                      className="absolute top-0 left-0 w-full h-full"
+                      allow="autoplay"
+                      allowFullScreen
+                    />
+                  )}
+                </div>
+              )}
 
               <div className="flex-1 bg-zinc-950 overflow-auto">
                 <div className="max-w-4xl mx-auto p-6">

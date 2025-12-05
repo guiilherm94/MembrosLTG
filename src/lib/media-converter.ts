@@ -53,7 +53,8 @@ export function getDriveDirectDownload(url: string): string {
 export function getDriveDirectView(url: string): string {
   const fileId = extractGoogleDriveFileId(url)
   if (fileId) {
-    return `https://drive.google.com/uc?export=view&id=${fileId}`
+    // Use thumbnail API with large size for better image display
+    return `https://drive.google.com/thumbnail?id=${fileId}&sz=w2000`
   }
   return url
 }

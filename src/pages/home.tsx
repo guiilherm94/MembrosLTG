@@ -37,9 +37,36 @@ export default function Home() {
     }
 
     const parsedUser = JSON.parse(userData)
-    setUser(parsedUser)
-    loadProducts(parsedUser.product_ids || [])
+    // Buscar dados atualizados do usuário do banco
+    loadUserFromDatabase(parsedUser.id)
   }, [router])
+
+  const loadUserFromDatabase = async (userId: string) => {
+    // Buscar dados atualizados do usuário
+    const { data: userData, error } = await supabase
+      .from('users')
+      .select('id, email, full_name, product_ids')
+      .eq('id', userId)
+      .single()
+
+    if (error || !userData) {
+      // Se houver erro, usar dados do cache
+      const cachedUser = JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user') || '{}')
+      setUser(cachedUser)
+      loadProducts(cachedUser.product_ids || [])
+      return
+    }
+
+    // Atualizar usuário com dados frescos do banco
+    setUser(userData)
+
+    // Atualizar cache com dados novos
+    const updatedUserData = JSON.stringify(userData)
+    sessionStorage.setItem('user', updatedUserData)
+    localStorage.setItem('user', updatedUserData)
+
+    loadProducts(userData.product_ids || [])
+  }
 
   const loadProducts = async (userProductIds: string[]) => {
     const { data } = await supabase
