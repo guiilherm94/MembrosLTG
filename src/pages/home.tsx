@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
+import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
+import { useSettings } from '@/hooks/useSettings'
 
 interface Product {
   id: string
@@ -21,6 +23,7 @@ interface User {
 
 export default function Home() {
   const router = useRouter()
+  const { settings } = useSettings()
   const [user, setUser] = useState<User | null>(null)
   const [products, setProducts] = useState<Product[]>([])
   const [progress, setProgress] = useState<Record<string, number>>({})
@@ -125,7 +128,11 @@ export default function Home() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            <h1 className="text-2xl font-black text-primary">KRONOS</h1>
+            {settings?.logo_url ? (
+              <Image src={settings.logo_url} alt="Logo" width={120} height={40} className="h-10 w-auto object-contain" />
+            ) : (
+              <h1 className="text-2xl font-black text-primary">KRONOS</h1>
+            )}
           </div>
 
           <div className="flex items-center gap-4">
@@ -144,6 +151,18 @@ export default function Home() {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-12">
+        {settings?.banner_url && (
+          <div className="mb-12 rounded-lg overflow-hidden">
+            <Image
+              src={settings.banner_url}
+              alt="Banner"
+              width={1200}
+              height={300}
+              className="w-full h-auto"
+            />
+          </div>
+        )}
+
         <div className="mb-12">
           <div className="flex items-center gap-4 mb-2">
             <svg className="w-6 h-6 text-primary" fill="currentColor" viewBox="0 0 20 20">
@@ -193,7 +212,7 @@ export default function Home() {
             <h3 className="text-2xl font-bold mb-6">KRONOS UPGRADE ®</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {lockedProducts.map((product) => (
-                <div key={product.id} className="relative bg-zinc-900 rounded-lg overflow-hidden border border-zinc-800 opacity-60">
+                <div key={product.id} className="relative bg-zinc-900 rounded-lg overflow-hidden border border-zinc-800 opacity-60 group">
                   <div className="aspect-video bg-zinc-800 flex items-center justify-center text-6xl font-black text-zinc-700">
                     {product.name.charAt(0)}
                   </div>
@@ -206,10 +225,20 @@ export default function Home() {
                     </div>
                     <p className="text-xs text-gray-400">0%</p>
                   </div>
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/60">
-                    <svg className="w-12 h-12 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 group-hover:bg-black/80 transition">
+                    <svg className="w-12 h-12 text-gray-500 mb-3" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                     </svg>
+                    {product.sale_url && (
+                      <a
+                        href={product.sale_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-6 py-2 bg-primary text-black font-bold rounded hover:bg-primary-dark transition"
+                      >
+                        Adquirir Acesso
+                      </a>
+                    )}
                   </div>
                 </div>
               ))}
