@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
+import { supabaseAuth } from '@/lib/supabase'
 
 interface User {
   id: string
@@ -53,8 +54,22 @@ export default function AdminPanel() {
   })
 
   useEffect(() => {
-    loadData()
+    checkAuth()
   }, [])
+
+  const checkAuth = async () => {
+    const { data: { session } } = await supabaseAuth.auth.getSession()
+    if (!session) {
+      router.push('/admin/login')
+      return
+    }
+    loadData()
+  }
+
+  const handleLogout = async () => {
+    await supabaseAuth.auth.signOut()
+    router.push('/admin/login')
+  }
 
   const loadData = async () => {
     setLoading(true)
@@ -190,9 +205,14 @@ export default function AdminPanel() {
       <header className="bg-zinc-900 border-b border-zinc-800 px-6 py-4">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-black text-primary">ADMIN PANEL</h1>
-          <button onClick={() => router.push('/home')} className="text-white hover:text-primary">
-            Voltar para Home
-          </button>
+          <div className="flex gap-4">
+            <button onClick={() => router.push('/home')} className="text-gray-400 hover:text-primary">
+              Ver Home
+            </button>
+            <button onClick={handleLogout} className="text-white hover:text-red-500">
+              Sair
+            </button>
+          </div>
         </div>
       </header>
 

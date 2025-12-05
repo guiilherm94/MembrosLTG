@@ -2,9 +2,6 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import dynamic from 'next/dynamic'
-
-const Plyr = dynamic(() => import('plyr-react'), { ssr: false })
 
 interface Lesson {
   id: string
