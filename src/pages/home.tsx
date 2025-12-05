@@ -3,6 +3,7 @@ import { useRouter } from 'next/router'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { useSettings } from '@/hooks/useSettings'
+import { getDriveDirectView } from '@/lib/media-converter'
 
 interface Product {
   id: string
@@ -128,7 +129,11 @@ export default function Home() {
               </svg>
             </button>
             {settings?.logo_url ? (
-              <img src={settings.logo_url} alt="Logo" className="h-10 w-auto object-contain max-w-[200px]" />
+              <img
+                src={settings.logo_url.includes('drive.google.com') ? getDriveDirectView(settings.logo_url) : settings.logo_url}
+                alt="Logo"
+                className="h-10 w-auto object-contain max-w-[200px]"
+              />
             ) : (
               <h1 className="text-2xl font-black text-primary">KRONOS</h1>
             )}
@@ -153,7 +158,7 @@ export default function Home() {
         {settings?.banner_url && (
           <div className="mb-12 rounded-lg overflow-hidden">
             <img
-              src={settings.banner_url}
+              src={settings.banner_url.includes('drive.google.com') ? getDriveDirectView(settings.banner_url) : settings.banner_url}
               alt="Banner"
               className="w-full h-auto max-h-[400px] object-cover"
             />

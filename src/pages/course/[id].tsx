@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { getDriveDirectDownload } from '@/lib/media-converter'
 
 interface Lesson {
   id: string
@@ -241,20 +242,31 @@ export default function CoursePage() {
                   {activeTab === 'files' && (
                     <div className="space-y-3">
                       {currentLesson.files && currentLesson.files.length > 0 ? (
-                        currentLesson.files.map((file: any, index: number) => (
-                          <a
-                            key={index}
-                            href={file.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-3 p-4 bg-zinc-900 border border-zinc-800 rounded hover:border-primary transition group"
-                          >
-                            <svg className="w-6 h-6 text-gray-400 group-hover:text-primary" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                            </svg>
-                            <span className="font-semibold group-hover:text-primary">{file.name || 'Download'}</span>
-                          </a>
-                        ))
+                        currentLesson.files.map((file: any, index: number) => {
+                          const downloadUrl = file.url.includes('drive.google.com')
+                            ? getDriveDirectDownload(file.url)
+                            : file.url
+                          return (
+                            <a
+                              key={index}
+                              href={downloadUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              download
+                              className="flex items-center gap-3 p-4 bg-zinc-900 border border-zinc-800 rounded hover:border-primary transition group"
+                            >
+                              <svg className="w-6 h-6 text-gray-400 group-hover:text-primary" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                              </svg>
+                              <div className="flex-1">
+                                <p className="font-semibold group-hover:text-primary">{file.name || 'Download'}</p>
+                                {file.url.includes('drive.google.com') && (
+                                  <p className="text-xs text-gray-500">Google Drive</p>
+                                )}
+                              </div>
+                            </a>
+                          )
+                        })
                       ) : (
                         <p className="text-gray-400 text-center py-8">Nenhum arquivo disponível</p>
                       )}
