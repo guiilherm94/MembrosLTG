@@ -55,6 +55,11 @@ export default function CoursePage() {
   }, [id, router])
 
   const loadProduct = async (productId: string) => {
+    const userData = sessionStorage.getItem('user') || localStorage.getItem('user')
+    if (!userData) return
+
+    const user = JSON.parse(userData)
+
     const { data } = await supabase
       .from('products')
       .select(`
@@ -68,11 +73,27 @@ export default function CoursePage() {
       .single()
 
     if (data) {
+      const allLessonIds = data.modules.flatMap((m: Module) => m.lessons.map((l: Lesson) => l.id))
+
+      const { data: completedLessons } = await supabase
+        .from('lesson_progress')
+        .select('lesson_id')
+        .eq('user_id', user.id)
+        .eq('completed', true)
+        .in('lesson_id', allLessonIds)
+
+      const completedIds = new Set(completedLessons?.map(cl => cl.lesson_id) || [])
+
       const sortedModules = data.modules
         .sort((a: Module, b: Module) => a.order_index - b.order_index)
         .map((module: Module) => ({
           ...module,
-          lessons: module.lessons.sort((a: Lesson, b: Lesson) => a.order_index - b.order_index)
+          lessons: module.lessons
+            .sort((a: Lesson, b: Lesson) => a.order_index - b.order_index)
+            .map((lesson: Lesson) => ({
+              ...lesson,
+              completed: completedIds.has(lesson.id)
+            }))
         }))
 
       const productData = { ...data, modules: sortedModules }

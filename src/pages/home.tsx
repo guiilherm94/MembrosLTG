@@ -23,6 +23,7 @@ export default function Home() {
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [products, setProducts] = useState<Product[]>([])
+  const [progress, setProgress] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -46,7 +47,10 @@ export default function Home() {
           id,
           name,
           order_index,
-          lessons (count)
+          lessons (
+            id,
+            name
+          )
         )
       `)
       .eq('is_active', true)
@@ -54,8 +58,40 @@ export default function Home() {
 
     if (data) {
       setProducts(data)
+      await calculateAllProgress(data)
     }
     setLoading(false)
+  }
+
+  const calculateAllProgress = async (productsData: Product[]) => {
+    if (!user) return
+
+    const progressMap: Record<string, number> = {}
+
+    for (const product of productsData) {
+      const totalLessons = product.modules.reduce((acc, module) => acc + (module.lessons?.length || 0), 0)
+
+      if (totalLessons === 0) {
+        progressMap[product.id] = 0
+        continue
+      }
+
+      const allLessonIds = product.modules.flatMap(module =>
+        module.lessons?.map((lesson: any) => lesson.id) || []
+      )
+
+      const { data: completedLessons } = await supabase
+        .from('lesson_progress')
+        .select('lesson_id')
+        .eq('user_id', user.id)
+        .eq('completed', true)
+        .in('lesson_id', allLessonIds)
+
+      const completedCount = completedLessons?.length || 0
+      progressMap[product.id] = Math.round((completedCount / totalLessons) * 100)
+    }
+
+    setProgress(progressMap)
   }
 
   const handleLogout = () => {
@@ -64,9 +100,8 @@ export default function Home() {
     router.push('/login')
   }
 
-  const calculateProgress = (product: Product) => {
-    if (!product.modules || product.modules.length === 0) return 0
-    return 0
+  const getProgress = (productId: string) => {
+    return progress[productId] || 0
   }
 
   if (loading) {
@@ -124,7 +159,7 @@ export default function Home() {
             <h3 className="text-2xl font-bold mb-6">KRONOS ®</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {userProducts.map((product) => {
-                const progress = calculateProgress(product)
+                const productProgress = getProgress(product.id)
                 return (
                   <Link
                     key={product.id}
@@ -140,11 +175,11 @@ export default function Home() {
                         <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
                           <div
                             className="h-full bg-primary transition-all duration-300"
-                            style={{ width: `${progress}%` }}
+                            style={{ width: `${productProgress}%` }}
                           />
                         </div>
                       </div>
-                      <p className="text-xs text-gray-400">{progress}%</p>
+                      <p className="text-xs text-gray-400">{productProgress}%</p>
                     </div>
                   </Link>
                 )
