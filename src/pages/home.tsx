@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
-import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import { useSettings } from '@/hooks/useSettings'
 
@@ -129,7 +128,7 @@ export default function Home() {
               </svg>
             </button>
             {settings?.logo_url ? (
-              <Image src={settings.logo_url} alt="Logo" width={120} height={40} className="h-10 w-auto object-contain" />
+              <img src={settings.logo_url} alt="Logo" className="h-10 w-auto object-contain max-w-[200px]" />
             ) : (
               <h1 className="text-2xl font-black text-primary">KRONOS</h1>
             )}
@@ -153,12 +152,10 @@ export default function Home() {
       <main className="max-w-7xl mx-auto px-6 py-12">
         {settings?.banner_url && (
           <div className="mb-12 rounded-lg overflow-hidden">
-            <Image
+            <img
               src={settings.banner_url}
               alt="Banner"
-              width={1200}
-              height={300}
-              className="w-full h-auto"
+              className="w-full h-auto max-h-[400px] object-cover"
             />
           </div>
         )}
