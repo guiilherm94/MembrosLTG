@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { getDriveDirectDownload } from '@/lib/media-converter'
 
 interface Lesson {
   id: string
@@ -169,37 +170,30 @@ export default function CoursePage() {
       </header>
 
       <div className="flex h-[calc(100vh-73px)]">
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col overflow-hidden">
           {currentLesson && (
             <>
-              <div className="bg-black aspect-video">
-                {currentLesson.video_type === 'youtube' && currentLesson.video_url && (
-                  <iframe
-                    src={currentLesson.video_url}
-                    className="w-full h-full"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                )}
-                {currentLesson.video_type === 'drive-video' && currentLesson.video_url && (
-                  <iframe
-                    src={currentLesson.video_url}
-                    className="w-full h-full"
-                    allow="autoplay"
-                    allowFullScreen
-                  />
-                )}
-                {!currentLesson.video_url && (
-                  <div className="w-full h-full flex items-center justify-center bg-zinc-900">
-                    <div className="text-center">
-                      <svg className="w-24 h-24 text-zinc-700 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-                      </svg>
-                      <p className="text-gray-500">Sem vídeo disponível</p>
-                    </div>
-                  </div>
-                )}
-              </div>
+              {/* Só mostra o container de vídeo se houver vídeo */}
+              {currentLesson.video_url && (
+                <div className="bg-black aspect-video relative w-full flex-shrink-0">
+                  {currentLesson.video_type === 'youtube' && (
+                    <iframe
+                      src={currentLesson.video_url}
+                      className="absolute top-0 left-0 w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  )}
+                  {currentLesson.video_type === 'drive-video' && (
+                    <iframe
+                      src={currentLesson.video_url}
+                      className="absolute top-0 left-0 w-full h-full"
+                      allow="autoplay"
+                      allowFullScreen
+                    />
+                  )}
+                </div>
+              )}
 
               <div className="flex-1 bg-zinc-950 overflow-auto">
                 <div className="max-w-4xl mx-auto p-6">
@@ -241,20 +235,31 @@ export default function CoursePage() {
                   {activeTab === 'files' && (
                     <div className="space-y-3">
                       {currentLesson.files && currentLesson.files.length > 0 ? (
-                        currentLesson.files.map((file: any, index: number) => (
-                          <a
-                            key={index}
-                            href={file.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-3 p-4 bg-zinc-900 border border-zinc-800 rounded hover:border-primary transition group"
-                          >
-                            <svg className="w-6 h-6 text-gray-400 group-hover:text-primary" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                            </svg>
-                            <span className="font-semibold group-hover:text-primary">{file.name || 'Download'}</span>
-                          </a>
-                        ))
+                        currentLesson.files.map((file: any, index: number) => {
+                          const downloadUrl = file.url.includes('drive.google.com')
+                            ? getDriveDirectDownload(file.url)
+                            : file.url
+                          return (
+                            <a
+                              key={index}
+                              href={downloadUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              download
+                              className="flex items-center gap-3 p-4 bg-zinc-900 border border-zinc-800 rounded hover:border-primary transition group"
+                            >
+                              <svg className="w-6 h-6 text-gray-400 group-hover:text-primary" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                              </svg>
+                              <div className="flex-1">
+                                <p className="font-semibold group-hover:text-primary">{file.name || 'Download'}</p>
+                                {file.url.includes('drive.google.com') && (
+                                  <p className="text-xs text-gray-500">Google Drive</p>
+                                )}
+                              </div>
+                            </a>
+                          )
+                        })
                       ) : (
                         <p className="text-gray-400 text-center py-8">Nenhum arquivo disponível</p>
                       )}

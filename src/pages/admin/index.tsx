@@ -495,14 +495,30 @@ export default function AdminPanel() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold mb-2">Produtos (IDs separados por vírgula)</label>
-                <input
-                  type="text"
-                  value={userForm.productIds.join(', ')}
-                  onChange={(e) => setUserForm({ ...userForm, productIds: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2"
-                  placeholder="uuid1, uuid2, uuid3"
-                />
+                <label className="block text-sm font-semibold mb-2">Produtos</label>
+                <div className="space-y-2 max-h-48 overflow-y-auto bg-zinc-800 border border-zinc-700 rounded p-3">
+                  {products.map((product) => (
+                    <label key={product.id} className="flex items-center gap-3 cursor-pointer hover:bg-zinc-700 p-2 rounded transition">
+                      <input
+                        type="checkbox"
+                        checked={userForm.productIds.includes(product.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setUserForm({ ...userForm, productIds: [...userForm.productIds, product.id] })
+                          } else {
+                            setUserForm({ ...userForm, productIds: userForm.productIds.filter(id => id !== product.id) })
+                          }
+                        }}
+                        className="w-4 h-4 text-primary bg-zinc-900 border-zinc-600 rounded focus:ring-primary focus:ring-2"
+                      />
+                      <span className="text-sm">{product.name}</span>
+                    </label>
+                  ))}
+                  {products.length === 0 && (
+                    <p className="text-sm text-gray-500 text-center py-2">Nenhum produto disponível</p>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Selecione os produtos que o usuário terá acesso</p>
               </div>
               <div className="flex gap-3 pt-4">
                 <button

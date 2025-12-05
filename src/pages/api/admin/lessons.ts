@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
 import { convertMediaUrl } from '@/lib/media-converter'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -15,7 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       processedVideoUrl = converted.embedUrl || videoUrl
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('lessons')
       .insert([
         {
@@ -51,7 +51,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       processedVideoUrl = converted.embedUrl || videoUrl
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('lessons')
       .update({
         name,
@@ -77,7 +77,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'DELETE') {
     const { id } = req.query
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('lessons')
       .delete()
       .eq('id', id)

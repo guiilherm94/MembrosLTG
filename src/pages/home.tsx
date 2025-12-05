@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
-import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import { useSettings } from '@/hooks/useSettings'
+import { getDriveDirectView } from '@/lib/media-converter'
 
 interface Product {
   id: string
@@ -37,9 +37,36 @@ export default function Home() {
     }
 
     const parsedUser = JSON.parse(userData)
-    setUser(parsedUser)
-    loadProducts(parsedUser.product_ids || [])
+    // Buscar dados atualizados do usuário do banco
+    loadUserFromDatabase(parsedUser.id)
   }, [router])
+
+  const loadUserFromDatabase = async (userId: string) => {
+    // Buscar dados atualizados do usuário
+    const { data: userData, error } = await supabase
+      .from('users')
+      .select('id, email, full_name, product_ids')
+      .eq('id', userId)
+      .single()
+
+    if (error || !userData) {
+      // Se houver erro, usar dados do cache
+      const cachedUser = JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user') || '{}')
+      setUser(cachedUser)
+      loadProducts(cachedUser.product_ids || [])
+      return
+    }
+
+    // Atualizar usuário com dados frescos do banco
+    setUser(userData)
+
+    // Atualizar cache com dados novos
+    const updatedUserData = JSON.stringify(userData)
+    sessionStorage.setItem('user', updatedUserData)
+    localStorage.setItem('user', updatedUserData)
+
+    loadProducts(userData.product_ids || [])
+  }
 
   const loadProducts = async (userProductIds: string[]) => {
     const { data } = await supabase
@@ -129,7 +156,11 @@ export default function Home() {
               </svg>
             </button>
             {settings?.logo_url ? (
-              <Image src={settings.logo_url} alt="Logo" width={120} height={40} className="h-10 w-auto object-contain" />
+              <img
+                src={settings.logo_url.includes('drive.google.com') ? getDriveDirectView(settings.logo_url) : settings.logo_url}
+                alt="Logo"
+                className="h-10 w-auto object-contain max-w-[200px]"
+              />
             ) : (
               <h1 className="text-2xl font-black text-primary">KRONOS</h1>
             )}
@@ -153,12 +184,10 @@ export default function Home() {
       <main className="max-w-7xl mx-auto px-6 py-12">
         {settings?.banner_url && (
           <div className="mb-12 rounded-lg overflow-hidden">
-            <Image
-              src={settings.banner_url}
+            <img
+              src={settings.banner_url.includes('drive.google.com') ? getDriveDirectView(settings.banner_url) : settings.banner_url}
               alt="Banner"
-              width={1200}
-              height={300}
-              className="w-full h-auto"
+              className="w-full h-auto max-h-[400px] object-cover"
             />
           </div>
         )}

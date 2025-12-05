@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseAdmin } from '@/lib/supabase'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
@@ -18,13 +18,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'PUT') {
     const { logoUrl, bannerUrl, colorScheme } = req.body
 
-    const { data: existing } = await supabase
+    const { data: existing } = await supabaseAdmin
       .from('site_settings')
       .select('id')
       .single()
 
     if (existing) {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('site_settings')
         .update({
           logo_url: logoUrl,
@@ -42,7 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json(data)
     } else {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('site_settings')
         .insert([
           {

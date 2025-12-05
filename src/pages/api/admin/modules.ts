@@ -1,11 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'POST') {
     const { productId, name, orderIndex } = req.body
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('modules')
       .insert([
         {
@@ -27,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'PUT') {
     const { id, name, orderIndex } = req.body
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('modules')
       .update({
         name,
@@ -48,7 +48,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'DELETE') {
     const { id } = req.query
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('modules')
       .delete()
       .eq('id', id)

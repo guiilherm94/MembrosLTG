@@ -51,6 +51,10 @@ export default function ProductManagement() {
     duration: ''
   })
 
+  const [filesList, setFilesList] = useState<Array<{ name: string; url: string }>>([])
+  const [newFileName, setNewFileName] = useState('')
+  const [newFileUrl, setNewFileUrl] = useState('')
+
   useEffect(() => {
     if (id) loadProduct()
   }, [id])
@@ -119,13 +123,6 @@ export default function ProductManagement() {
   const handleSaveLesson = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    const filesArray = lessonForm.files
-      ? lessonForm.files.split('\n').filter(Boolean).map(line => {
-          const [name, url] = line.split('|').map(s => s.trim())
-          return { name, url }
-        })
-      : []
-
     if (editingLesson) {
       await fetch('/api/admin/lessons', {
         method: 'PUT',
@@ -136,7 +133,7 @@ export default function ProductManagement() {
           orderIndex: lessonForm.orderIndex,
           videoUrl: lessonForm.videoUrl,
           description: lessonForm.description,
-          files: filesArray,
+          files: filesList,
           duration: lessonForm.duration
         })
       })
@@ -150,7 +147,7 @@ export default function ProductManagement() {
           orderIndex: lessonForm.orderIndex,
           videoUrl: lessonForm.videoUrl,
           description: lessonForm.description,
-          files: filesArray,
+          files: filesList,
           duration: lessonForm.duration
         })
       })
@@ -159,6 +156,9 @@ export default function ProductManagement() {
     setShowLessonModal(false)
     setEditingLesson(null)
     setLessonForm({ name: '', orderIndex: 0, videoUrl: '', description: '', files: '', duration: '' })
+    setFilesList([])
+    setNewFileName('')
+    setNewFileUrl('')
     loadProduct()
   }
 
@@ -179,13 +179,13 @@ export default function ProductManagement() {
 
   const openEditLesson = (lesson: Lesson) => {
     setEditingLesson(lesson)
-    const filesText = lesson.files?.map((f: any) => `${f.name}|${f.url}`).join('\n') || ''
+    setFilesList(lesson.files || [])
     setLessonForm({
       name: lesson.name,
       orderIndex: lesson.order_index,
       videoUrl: lesson.video_url || '',
       description: lesson.description || '',
-      files: filesText,
+      files: '',
       duration: lesson.duration || ''
     })
     setShowLessonModal(true)
@@ -194,6 +194,9 @@ export default function ProductManagement() {
   const openNewLesson = (moduleId: string) => {
     setSelectedModuleId(moduleId)
     setEditingLesson(null)
+    setFilesList([])
+    setNewFileName('')
+    setNewFileUrl('')
     const module = product?.modules.find(m => m.id === moduleId)
     setLessonForm({
       name: '',
@@ -204,6 +207,18 @@ export default function ProductManagement() {
       duration: ''
     })
     setShowLessonModal(true)
+  }
+
+  const handleAddFile = () => {
+    if (newFileName.trim() && newFileUrl.trim()) {
+      setFilesList([...filesList, { name: newFileName.trim(), url: newFileUrl.trim() }])
+      setNewFileName('')
+      setNewFileUrl('')
+    }
+  }
+
+  const handleRemoveFile = (index: number) => {
+    setFilesList(filesList.filter((_, i) => i !== index))
   }
 
   if (loading) {
@@ -412,13 +427,62 @@ export default function ProductManagement() {
               </div>
               <div>
                 <label className="block text-sm font-semibold mb-2">Arquivos para Download</label>
-                <textarea
-                  value={lessonForm.files}
-                  onChange={(e) => setLessonForm({ ...lessonForm, files: e.target.value })}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2 h-24 font-mono text-sm"
-                  placeholder="Nome do Arquivo|https://drive.google.com/...&#10;Outro Arquivo|https://drive.google.com/..."
-                />
-                <p className="text-xs text-gray-500 mt-1">Um arquivo por linha. Formato: Nome|URL</p>
+
+                {/* Lista de arquivos adicionados */}
+                {filesList.length > 0 && (
+                  <div className="mb-3 space-y-2 max-h-48 overflow-y-auto bg-zinc-800 border border-zinc-700 rounded p-3">
+                    {filesList.map((file, index) => (
+                      <div key={index} className="flex items-center gap-2 bg-zinc-900 p-2 rounded">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold truncate">{file.name}</p>
+                          <p className="text-xs text-gray-500 truncate">{file.url}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveFile(index)}
+                          className="flex-shrink-0 p-1 text-red-500 hover:bg-red-500/20 rounded"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Formulário para adicionar novo arquivo */}
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      value={newFileName}
+                      onChange={(e) => setNewFileName(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddFile())}
+                      className="bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm"
+                      placeholder="Nome do arquivo"
+                    />
+                    <input
+                      type="url"
+                      value={newFileUrl}
+                      onChange={(e) => setNewFileUrl(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddFile())}
+                      className="bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm"
+                      placeholder="https://drive.google.com/..."
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddFile}
+                    disabled={!newFileName.trim() || !newFileUrl.trim()}
+                    className="w-full px-3 py-2 bg-zinc-700 hover:bg-zinc-600 disabled:bg-zinc-800 disabled:text-gray-600 rounded text-sm font-semibold transition"
+                  >
+                    + Adicionar Arquivo
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Links do Google Drive serão convertidos automaticamente para download direto
+                </p>
               </div>
               <div className="flex gap-3 pt-4">
                 <button

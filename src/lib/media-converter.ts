@@ -28,24 +28,35 @@ export function convertMediaUrl(url: string): ConvertedMedia {
     const fileId = extractGoogleDriveFileId(url)
     if (!fileId) return result
 
-    if (url.includes('/file/d/') || url.includes('view')) {
-      const mimeType = detectDriveMimeType(url)
+    // Always provide both preview and download URLs for Drive files
+    result.embedUrl = `https://drive.google.com/file/d/${fileId}/preview`
+    result.downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`
 
-      if (mimeType === 'video') {
-        result.type = 'drive-video'
-        result.embedUrl = `https://drive.google.com/file/d/${fileId}/preview`
-      } else if (mimeType === 'image') {
-        result.type = 'drive-image'
-        result.embedUrl = `https://drive.google.com/uc?export=view&id=${fileId}`
-        result.thumbnailUrl = result.embedUrl
-      } else {
-        result.type = 'drive-file'
-        result.downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`
-      }
-    }
+    // For now, treat all Drive files as videos for embedding
+    // Images and other files will use downloadUrl
+    result.type = 'drive-video'
   }
 
   return result
+}
+
+// Helper function to convert any Drive link to direct download URL
+export function getDriveDirectDownload(url: string): string {
+  const fileId = extractGoogleDriveFileId(url)
+  if (fileId) {
+    return `https://drive.google.com/uc?export=download&id=${fileId}`
+  }
+  return url
+}
+
+// Helper function to convert any Drive link to preview/view URL
+export function getDriveDirectView(url: string): string {
+  const fileId = extractGoogleDriveFileId(url)
+  if (fileId) {
+    // Use thumbnail API with large size for better image display
+    return `https://drive.google.com/thumbnail?id=${fileId}&sz=w2000`
+  }
+  return url
 }
 
 function extractYouTubeId(url: string): string | null {
@@ -75,20 +86,6 @@ function extractGoogleDriveFileId(url: string): string | null {
   }
 
   return null
-}
-
-function detectDriveMimeType(url: string): 'video' | 'image' | 'file' {
-  const lowerUrl = url.toLowerCase()
-
-  if (lowerUrl.includes('video') || lowerUrl.includes('.mp4') || lowerUrl.includes('.mov')) {
-    return 'video'
-  }
-
-  if (lowerUrl.includes('image') || lowerUrl.includes('.jpg') || lowerUrl.includes('.png') || lowerUrl.includes('.jpeg')) {
-    return 'image'
-  }
-
-  return 'file'
 }
 
 export function getFileNameFromUrl(url: string): string {
