@@ -22,7 +22,7 @@ interface Product {
 
 export default function AdminPanel() {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<'products' | 'users'>('products')
+  const [activeTab, setActiveTab] = useState<'products' | 'users' | 'settings'>('products')
   const [users, setUsers] = useState<User[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
@@ -30,6 +30,12 @@ export default function AdminPanel() {
   const [showProductModal, setShowProductModal] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+
+  const [settings, setSettings] = useState({
+    logoUrl: '',
+    bannerUrl: '',
+    colorScheme: 'green'
+  })
 
   const [userForm, setUserForm] = useState({
     email: '',
@@ -52,8 +58,20 @@ export default function AdminPanel() {
 
   const loadData = async () => {
     setLoading(true)
-    await Promise.all([loadUsers(), loadProducts()])
+    await Promise.all([loadUsers(), loadProducts(), loadSettings()])
     setLoading(false)
+  }
+
+  const loadSettings = async () => {
+    const res = await fetch('/api/admin/settings')
+    const data = await res.json()
+    if (data) {
+      setSettings({
+        logoUrl: data.logo_url || '',
+        bannerUrl: data.banner_url || '',
+        colorScheme: data.color_scheme || 'green'
+      })
+    }
   }
 
   const loadUsers = async () => {
@@ -155,6 +173,18 @@ export default function AdminPanel() {
     setShowProductModal(true)
   }
 
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    await fetch('/api/admin/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(settings)
+    })
+
+    alert('Configurações salvas! Recarregue a página para ver as mudanças.')
+  }
+
   return (
     <div className="min-h-screen bg-black">
       <header className="bg-zinc-900 border-b border-zinc-800 px-6 py-4">
@@ -187,6 +217,16 @@ export default function AdminPanel() {
             }`}
           >
             Usuários
+          </button>
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`px-6 py-3 rounded font-semibold transition ${
+              activeTab === 'settings'
+                ? 'bg-primary text-black'
+                : 'bg-zinc-800 text-white hover:bg-zinc-700'
+            }`}
+          >
+            Configurações
           </button>
         </div>
 
@@ -256,6 +296,77 @@ export default function AdminPanel() {
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+
+        {activeTab === 'settings' && (
+          <div>
+            <h2 className="text-2xl font-bold mb-6">Configurações do Site</h2>
+
+            <form onSubmit={handleSaveSettings} className="max-w-2xl">
+              <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 space-y-6">
+                <div>
+                  <label className="block text-sm font-semibold mb-2">URL do Logo</label>
+                  <input
+                    type="url"
+                    value={settings.logoUrl}
+                    onChange={(e) => setSettings({ ...settings, logoUrl: e.target.value })}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2"
+                    placeholder="https://..."
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Logo exibido no topo da área de membros</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold mb-2">URL do Banner</label>
+                  <input
+                    type="url"
+                    value={settings.bannerUrl}
+                    onChange={(e) => setSettings({ ...settings, bannerUrl: e.target.value })}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2"
+                    placeholder="https://..."
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Banner exibido na home</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold mb-3">Esquema de Cores</label>
+                  <div className="grid grid-cols-5 gap-3">
+                    {[
+                      { key: 'green', name: 'Verde Limão', color: '#a3e635' },
+                      { key: 'blue', name: 'Azul Elétrico', color: '#3b82f6' },
+                      { key: 'purple', name: 'Roxo Neon', color: '#a855f7' },
+                      { key: 'orange', name: 'Laranja Vibrante', color: '#f97316' },
+                      { key: 'pink', name: 'Rosa Cyberpunk', color: '#ec4899' },
+                    ].map((theme) => (
+                      <button
+                        key={theme.key}
+                        type="button"
+                        onClick={() => setSettings({ ...settings, colorScheme: theme.key })}
+                        className={`p-4 rounded-lg border-2 transition ${
+                          settings.colorScheme === theme.key
+                            ? 'border-white'
+                            : 'border-zinc-700 hover:border-zinc-500'
+                        }`}
+                      >
+                        <div
+                          className="w-full h-12 rounded mb-2"
+                          style={{ backgroundColor: theme.color }}
+                        />
+                        <p className="text-xs font-semibold text-center">{theme.name}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full px-6 py-3 bg-primary text-black rounded font-semibold hover:bg-primary-dark transition"
+                >
+                  Salvar Configurações
+                </button>
+              </div>
+            </form>
           </div>
         )}
 

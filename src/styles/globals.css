@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-primary: #a3e635;
+  --color-primary-dark: #84cc16;
+  --color-primary-light: #bef264;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -14,5 +20,5 @@ body {
 }
 
 .plyr {
-  --plyr-color-main: #a3e635;
+  --plyr-color-main: var(--color-primary);
 }
