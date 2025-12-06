@@ -148,6 +148,9 @@ interface Product {
   id: string
   name: string
   modules: Module[]
+  webhook_secret?: string
+  enabled_platforms?: string[]
+  enable_access_removal?: boolean
 }
 
 export default function ProductManagement() {
@@ -177,6 +180,12 @@ export default function ProductManagement() {
   const [newFileName, setNewFileName] = useState('')
   const [newFileUrl, setNewFileUrl] = useState('')
 
+  const [webhookConfig, setWebhookConfig] = useState({
+    enabledPlatforms: [] as string[],
+    enableAccessRemoval: false
+  })
+  const [webhookUrl, setWebhookUrl] = useState('')
+
   useEffect(() => {
     if (id) loadProduct()
   }, [id])
@@ -203,6 +212,18 @@ export default function ProductManagement() {
         }))
 
       setProduct({ ...data, modules: sortedModules })
+
+      // Carregar configurações de webhook
+      setWebhookConfig({
+        enabledPlatforms: data.enabled_platforms || [],
+        enableAccessRemoval: data.enable_access_removal || false
+      })
+
+      // Gerar URL do webhook
+      if (data.webhook_secret) {
+        const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
+        setWebhookUrl(`${baseUrl}/api/webhook/${data.webhook_secret}`)
+      }
     }
     setLoading(false)
   }
@@ -338,6 +359,41 @@ export default function ProductManagement() {
     setFilesList(filesList.filter((_, i) => i !== index))
   }
 
+  const togglePlatform = (platform: string) => {
+    setWebhookConfig(prev => {
+      const newPlatforms = prev.enabledPlatforms.includes(platform)
+        ? prev.enabledPlatforms.filter(p => p !== platform)
+        : [...prev.enabledPlatforms, platform]
+      return { ...prev, enabledPlatforms: newPlatforms }
+    })
+  }
+
+  const handleSaveWebhookConfig = async () => {
+    if (!product) return
+
+    await fetch('/api/admin/products', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: product.id,
+        name: product.name,
+        description: '',
+        bannerUrl: '',
+        saleUrl: '',
+        enabledPlatforms: webhookConfig.enabledPlatforms,
+        enableAccessRemoval: webhookConfig.enableAccessRemoval
+      })
+    })
+
+    alert('Configurações de webhook salvas!')
+    loadProduct()
+  }
+
+  const copyWebhookUrl = () => {
+    navigator.clipboard.writeText(webhookUrl)
+    alert('URL do webhook copiada!')
+  }
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -426,6 +482,96 @@ export default function ProductManagement() {
       </header>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Seção de Webhook */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 mb-8">
+          <h2 className="text-xl font-bold mb-4">Configuração de Webhook</h2>
+
+          <div className="space-y-4">
+            {/* URL do Webhook */}
+            <div>
+              <label className="block text-sm font-semibold mb-2">URL do Webhook</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={webhookUrl}
+                  readOnly
+                  className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-4 py-2 text-gray-400"
+                  placeholder="Carregando..."
+                />
+                <button
+                  onClick={copyWebhookUrl}
+                  className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 rounded font-semibold transition"
+                >
+                  Copiar
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Use esta URL para configurar webhooks nas plataformas habilitadas abaixo
+              </p>
+            </div>
+
+            {/* Plataformas Habilitadas */}
+            <div>
+              <label className="block text-sm font-semibold mb-2">Plataformas Habilitadas</label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {['cartpanda', 'hotmart', 'yampi', 'kiwify'].map((platform) => (
+                  <button
+                    key={platform}
+                    type="button"
+                    onClick={() => togglePlatform(platform)}
+                    className={`p-3 rounded-lg border-2 transition ${
+                      webhookConfig.enabledPlatforms.includes(platform)
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-zinc-700 hover:border-zinc-500'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className={`w-4 h-4 rounded ${
+                        webhookConfig.enabledPlatforms.includes(platform)
+                          ? 'bg-primary'
+                          : 'bg-zinc-700'
+                      }`} />
+                      <span className="font-semibold capitalize">{platform}</span>
+                    </div>
+                    {platform === 'cartpanda' && (
+                      <p className="text-xs text-gray-500 mt-1">100% Funcional</p>
+                    )}
+                    {platform !== 'cartpanda' && (
+                      <p className="text-xs text-gray-500 mt-1">Em desenvolvimento</p>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Remoção de Acesso */}
+            <div>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={webhookConfig.enableAccessRemoval}
+                  onChange={(e) => setWebhookConfig({ ...webhookConfig, enableAccessRemoval: e.target.checked })}
+                  className="w-5 h-5"
+                />
+                <div>
+                  <span className="text-sm font-semibold">Habilitar Remoção de Acesso</span>
+                  <p className="text-xs text-gray-500">
+                    Remove automaticamente o acesso do usuário ao receber webhooks de cancelamento/reembolso
+                  </p>
+                </div>
+              </label>
+            </div>
+
+            {/* Botão Salvar */}
+            <button
+              onClick={handleSaveWebhookConfig}
+              className="px-6 py-2 bg-primary text-black rounded font-semibold hover:bg-primary-dark transition"
+            >
+              Salvar Configurações de Webhook
+            </button>
+          </div>
+        </div>
+
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold">Módulos e Aulas</h2>
           <button

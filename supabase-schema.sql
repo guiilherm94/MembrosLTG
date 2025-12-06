@@ -20,9 +20,14 @@ CREATE TABLE products (
   banner_url TEXT,
   sale_url TEXT,
   is_active BOOLEAN DEFAULT true,
+  webhook_secret TEXT DEFAULT gen_random_uuid()::text,
+  enabled_platforms JSONB DEFAULT '[]'::jsonb,
+  enable_access_removal BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+CREATE INDEX idx_products_webhook_secret ON products(webhook_secret);
 
 -- MODULES TABLE
 CREATE TABLE modules (
