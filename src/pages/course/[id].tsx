@@ -130,6 +130,11 @@ export default function CoursePage() {
         completed: true,
         completed_at: new Date().toISOString()
       })
+
+    // Recarregar produto para atualizar progresso
+    if (id) {
+      loadProduct(id as string)
+    }
   }
 
   if (loading) {
@@ -148,18 +153,40 @@ export default function CoursePage() {
     )
   }
 
+  // Calcular progresso total do curso
+  const totalLessons = product.modules.reduce((acc, module) => acc + module.lessons.length, 0)
+  const completedLessons = product.modules.reduce((acc, module) =>
+    acc + module.lessons.filter(lesson => lesson.completed).length, 0
+  )
+  const progressPercentage = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0
+
   return (
     <div className="min-h-screen bg-black">
       <header className="bg-zinc-900 border-b border-zinc-800 px-6 py-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold">{product.name}</h1>
           <div className="flex items-center gap-4">
-            <button className="px-4 py-2 bg-primary/10 text-primary border border-primary rounded text-sm font-semibold flex items-center gap-2">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-              Curso Completo
-            </button>
+            <div className={`px-4 py-2 rounded text-sm font-semibold flex items-center gap-2 ${
+              progressPercentage === 100
+                ? 'bg-primary/10 text-primary border border-primary'
+                : 'bg-zinc-800 text-gray-400'
+            }`}>
+              {progressPercentage === 100 ? (
+                <>
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  Curso Completo
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  {progressPercentage}% Concluído
+                </>
+              )}
+            </div>
             <Link href="/home" className="text-white hover:text-primary">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

@@ -23,7 +23,7 @@ interface Product {
 
 export default function AdminPanel() {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<'products' | 'users' | 'settings'>('products')
+  const [activeTab, setActiveTab] = useState<'products' | 'users' | 'settings' | 'webhooks'>('products')
   const [users, setUsers] = useState<User[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
@@ -257,6 +257,16 @@ export default function AdminPanel() {
             }`}
           >
             Configurações
+          </button>
+          <button
+            onClick={() => setActiveTab('webhooks')}
+            className={`px-6 py-3 rounded font-semibold transition ${
+              activeTab === 'webhooks'
+                ? 'bg-primary text-black'
+                : 'bg-zinc-800 text-white hover:bg-zinc-700'
+            }`}
+          >
+            Webhooks
           </button>
         </div>
 
@@ -519,6 +529,163 @@ export default function AdminPanel() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'webhooks' && (
+          <div>
+            <h2 className="text-2xl font-bold mb-6">Integração com Webhooks</h2>
+
+            <div className="space-y-6 max-w-4xl">
+              {/* Informações do Webhook */}
+              <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
+                <h3 className="text-xl font-bold mb-4">Informações do Webhook</h3>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold mb-2">URL do Webhook</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/webhook/cartpanda`}
+                        readOnly
+                        className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-4 py-2 font-mono text-sm"
+                      />
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(`${window.location.origin}/api/webhook/cartpanda`)
+                          alert('URL copiada!')
+                        }}
+                        className="px-4 py-2 bg-primary text-black rounded font-semibold hover:bg-primary/90 transition"
+                      >
+                        Copiar
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">Use esta URL para configurar o webhook na sua plataforma de vendas</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold mb-2">Método HTTP</label>
+                    <input
+                      type="text"
+                      value="POST"
+                      readOnly
+                      className="w-32 bg-zinc-800 border border-zinc-700 rounded px-4 py-2 font-mono text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Guia de Configuração */}
+              <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
+                <h3 className="text-xl font-bold mb-4">Como Configurar</h3>
+
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold mb-2">1. Configure o webhook na sua plataforma</h4>
+                    <p className="text-sm text-gray-400">Adicione a URL acima na configuração de webhooks da CartPanda, Hotmart, Yampi, Kiwify ou Cacto.</p>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold mb-2">2. Estrutura do JSON esperado</h4>
+                    <p className="text-sm text-gray-400 mb-2">O webhook deve enviar um JSON com os seguintes campos:</p>
+                    <pre className="bg-black border border-zinc-700 rounded p-4 text-xs overflow-x-auto">
+{`{
+  "customer_email": "cliente@email.com",
+  "customer_name": "Nome do Cliente",
+  "customer_phone": "11999999999",
+  "status": "approved",
+  "membership_product_id": "uuid-do-produto"
+}`}
+                    </pre>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold mb-2">3. Status aceitos</h4>
+                    <p className="text-sm text-gray-400">approved, paid, complete, completed, success, active</p>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold mb-2">4. Como obter o ID do produto</h4>
+                    <p className="text-sm text-gray-400 mb-2">Vá na aba "Produtos" e copie o ID do produto desejado. Use este ID no campo <code className="bg-zinc-800 px-1 rounded">membership_product_id</code> no webhook.</p>
+                  </div>
+
+                  <div className="border-t border-zinc-800 pt-4">
+                    <h4 className="font-semibold mb-2">Funcionalidades</h4>
+                    <ul className="text-sm text-gray-400 space-y-1 list-disc list-inside">
+                      <li>Cria automaticamente novos usuários quando uma compra é aprovada</li>
+                      <li>Gera senha temporária automaticamente</li>
+                      <li>Adiciona o produto ao usuário existente se ele já tiver conta</li>
+                      <li>Suporta múltiplas plataformas (CartPanda, Hotmart, Yampi, Kiwify, Cacto)</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Exemplo de uso */}
+              <div className="bg-blue-900/20 border border-blue-500 rounded-lg p-6">
+                <h3 className="text-blue-400 font-bold mb-2">💡 Dica</h3>
+                <p className="text-sm text-gray-300">
+                  Você pode testar o webhook usando ferramentas como Postman ou Insomnia.
+                  Envie um POST para a URL acima com o JSON de exemplo.
+                </p>
+              </div>
+
+              {/* Formatos suportados */}
+              <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
+                <h3 className="text-xl font-bold mb-4">Formatos de Webhook Suportados</h3>
+
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold text-primary mb-2">CartPanda / Formato Genérico</h4>
+                    <pre className="bg-black border border-zinc-700 rounded p-4 text-xs overflow-x-auto">
+{`{
+  "customer_email": "cliente@email.com",
+  "customer_name": "Nome",
+  "customer_phone": "11999999999",
+  "product_id": "uuid-produto",
+  "status": "approved"
+}`}
+                    </pre>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-primary mb-2">Hotmart</h4>
+                    <pre className="bg-black border border-zinc-700 rounded p-4 text-xs overflow-x-auto">
+{`{
+  "data": {
+    "buyer": {
+      "email": "cliente@email.com",
+      "name": "Nome"
+    },
+    "purchase": {
+      "status": "approved"
+    }
+  },
+  "membership_product_id": "uuid-produto"
+}`}
+                    </pre>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-primary mb-2">Yampi / Kiwify</h4>
+                    <pre className="bg-black border border-zinc-700 rounded p-4 text-xs overflow-x-auto">
+{`{
+  "email": "cliente@email.com",
+  "name": "Nome",
+  "transaction_status": "paid",
+  "membership_product_id": "uuid-produto"
+}`}
+                    </pre>
+                  </div>
+
+                  <p className="text-xs text-gray-500 mt-4">
+                    ⚠️ <strong>Importante:</strong> O campo <code className="bg-zinc-800 px-1 rounded">membership_product_id</code> deve sempre ser enviado
+                    com o UUID do produto cadastrado no sistema.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         )}
