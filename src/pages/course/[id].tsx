@@ -117,20 +117,32 @@ export default function CoursePage() {
     setExpandedModules(newExpanded)
   }
 
-  const markAsCompleted = async (lessonId: string) => {
+  const toggleLessonCompletion = async (lessonId: string, currentStatus: boolean, e: React.MouseEvent) => {
+    e.stopPropagation() // Evita que abra a aula ao clicar no check
+
     const userData = sessionStorage.getItem('user') || localStorage.getItem('user')
     if (!userData) return
 
     const user = JSON.parse(userData)
 
-    await supabase
-      .from('lesson_progress')
-      .upsert({
-        user_id: user.id,
-        lesson_id: lessonId,
-        completed: true,
-        completed_at: new Date().toISOString()
-      })
+    if (currentStatus) {
+      // Se já está completa, remove o progresso
+      await supabase
+        .from('lesson_progress')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('lesson_id', lessonId)
+    } else {
+      // Se não está completa, marca como completa
+      await supabase
+        .from('lesson_progress')
+        .upsert({
+          user_id: user.id,
+          lesson_id: lessonId,
+          completed: true,
+          completed_at: new Date().toISOString()
+        })
+    }
 
     // Recarregar produto para atualizar progresso
     if (id) {
@@ -308,32 +320,36 @@ export default function CoursePage() {
           </div>
 
           <div className="divide-y divide-zinc-800">
-            {product.modules.map((module) => (
-              <div key={module.id}>
-                <button
-                  onClick={() => toggleModule(module.id)}
-                  className="w-full px-4 py-3 flex items-center justify-between hover:bg-zinc-800 transition"
-                >
-                  <span className="font-semibold text-sm">{module.name}</span>
-                  <svg
-                    className={`w-5 h-5 transition-transform ${expandedModules.has(module.id) ? 'rotate-180' : ''}`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+            {product.modules.map((module) => {
+              const completedLessonsCount = module.lessons.filter(l => l.completed).length
+              const totalLessons = module.lessons.length
+
+              return (
+                <div key={module.id}>
+                  <button
+                    onClick={() => toggleModule(module.id)}
+                    className="w-full px-4 py-3 flex items-center justify-between hover:bg-zinc-800 transition"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-sm">{module.name}</span>
+                      <span className="text-xs text-gray-500">({completedLessonsCount}/{totalLessons})</span>
+                    </div>
+                    <svg
+                      className={`w-5 h-5 transition-transform ${expandedModules.has(module.id) ? 'rotate-180' : ''}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
 
                 {expandedModules.has(module.id) && (
                   <div className="bg-zinc-950">
-                    {module.lessons.map((lesson, lessonIndex) => (
+                    {module.lessons.map((lesson) => (
                       <button
                         key={lesson.id}
-                        onClick={() => {
-                          setCurrentLesson(lesson)
-                          markAsCompleted(lesson.id)
-                        }}
+                        onClick={() => setCurrentLesson(lesson)}
                         className={`w-full px-6 py-3 text-left hover:bg-zinc-800 transition border-l-2 ${
                           currentLesson?.id === lesson.id
                             ? 'border-primary bg-zinc-800'
@@ -342,12 +358,12 @@ export default function CoursePage() {
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-xs text-gray-500">({lessonIndex + 1}/{module.lessons.length})</span>
-                              <p className="text-sm font-medium">{lesson.name}</p>
-                            </div>
+                            <p className="text-sm font-medium">{lesson.name}</p>
                           </div>
-                          <div className="flex-shrink-0">
+                          <div
+                            className="flex-shrink-0 cursor-pointer hover:opacity-70 transition"
+                            onClick={(e) => toggleLessonCompletion(lesson.id, lesson.completed || false, e)}
+                          >
                             {lesson.completed ? (
                               <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -362,7 +378,7 @@ export default function CoursePage() {
                   </div>
                 )}
               </div>
-            ))}
+            )})}
           </div>
         </aside>
       </div>

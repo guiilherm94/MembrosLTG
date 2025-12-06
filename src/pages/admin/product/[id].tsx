@@ -38,17 +38,14 @@ export default function ProductManagement() {
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null)
 
   const [moduleForm, setModuleForm] = useState({
-    name: '',
-    orderIndex: 0
+    name: ''
   })
 
   const [lessonForm, setLessonForm] = useState({
     name: '',
-    orderIndex: 0,
     videoUrl: '',
     description: '',
-    files: '',
-    duration: ''
+    files: ''
   })
 
   const [filesList, setFilesList] = useState<Array<{ name: string; url: string }>>([])
@@ -94,7 +91,8 @@ export default function ProductManagement() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: editingModule.id,
-          ...moduleForm
+          name: moduleForm.name,
+          orderIndex: editingModule.order_index // Mantém a ordem existente
         })
       })
     } else {
@@ -103,14 +101,15 @@ export default function ProductManagement() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           productId: id,
-          ...moduleForm
+          name: moduleForm.name,
+          orderIndex: product?.modules.length || 0 // Adiciona ao final
         })
       })
     }
 
     setShowModuleModal(false)
     setEditingModule(null)
-    setModuleForm({ name: '', orderIndex: 0 })
+    setModuleForm({ name: '' })
     loadProduct()
   }
 
@@ -130,32 +129,31 @@ export default function ProductManagement() {
         body: JSON.stringify({
           id: editingLesson.id,
           name: lessonForm.name,
-          orderIndex: lessonForm.orderIndex,
+          orderIndex: editingLesson.order_index, // Mantém a ordem existente
           videoUrl: lessonForm.videoUrl,
           description: lessonForm.description,
-          files: filesList,
-          duration: lessonForm.duration
+          files: filesList
         })
       })
     } else {
+      const module = product?.modules.find(m => m.id === selectedModuleId)
       await fetch('/api/admin/lessons', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           moduleId: selectedModuleId,
           name: lessonForm.name,
-          orderIndex: lessonForm.orderIndex,
+          orderIndex: module?.lessons.length || 0, // Adiciona ao final
           videoUrl: lessonForm.videoUrl,
           description: lessonForm.description,
-          files: filesList,
-          duration: lessonForm.duration
+          files: filesList
         })
       })
     }
 
     setShowLessonModal(false)
     setEditingLesson(null)
-    setLessonForm({ name: '', orderIndex: 0, videoUrl: '', description: '', files: '', duration: '' })
+    setLessonForm({ name: '', videoUrl: '', description: '', files: '' })
     setFilesList([])
     setNewFileName('')
     setNewFileUrl('')
@@ -171,8 +169,7 @@ export default function ProductManagement() {
   const openEditModule = (module: Module) => {
     setEditingModule(module)
     setModuleForm({
-      name: module.name,
-      orderIndex: module.order_index
+      name: module.name
     })
     setShowModuleModal(true)
   }
@@ -182,11 +179,9 @@ export default function ProductManagement() {
     setFilesList(lesson.files || [])
     setLessonForm({
       name: lesson.name,
-      orderIndex: lesson.order_index,
       videoUrl: lesson.video_url || '',
       description: lesson.description || '',
-      files: '',
-      duration: lesson.duration || ''
+      files: ''
     })
     setShowLessonModal(true)
   }
@@ -197,14 +192,11 @@ export default function ProductManagement() {
     setFilesList([])
     setNewFileName('')
     setNewFileUrl('')
-    const module = product?.modules.find(m => m.id === moduleId)
     setLessonForm({
       name: '',
-      orderIndex: module?.lessons.length || 0,
       videoUrl: '',
       description: '',
-      files: '',
-      duration: ''
+      files: ''
     })
     setShowLessonModal(true)
   }
@@ -249,7 +241,7 @@ export default function ProductManagement() {
           <button
             onClick={() => {
               setEditingModule(null)
-              setModuleForm({ name: '', orderIndex: product.modules.length })
+              setModuleForm({ name: '' })
               setShowModuleModal(true)
             }}
             className="px-4 py-2 bg-primary text-black rounded font-semibold hover:bg-primary-dark transition"
@@ -295,8 +287,7 @@ export default function ProductManagement() {
                       <div className="flex-1">
                         <p className="font-semibold">{lesson.name}</p>
                         <div className="flex gap-4 text-xs text-gray-400 mt-1">
-                          <span>{lesson.duration || '00:00'}</span>
-                          {lesson.video_url && <span>• Vídeo</span>}
+                          {lesson.video_url && <span>Vídeo</span>}
                           {lesson.files?.length > 0 && <span>• {lesson.files.length} arquivos</span>}
                         </div>
                       </div>
@@ -338,16 +329,6 @@ export default function ProductManagement() {
                   required
                 />
               </div>
-              <div>
-                <label className="block text-sm font-semibold mb-2">Ordem</label>
-                <input
-                  type="number"
-                  value={moduleForm.orderIndex}
-                  onChange={(e) => setModuleForm({ ...moduleForm, orderIndex: parseInt(e.target.value) })}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2"
-                  min="0"
-                />
-              </div>
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
@@ -382,28 +363,6 @@ export default function ProductManagement() {
                   className="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2"
                   required
                 />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold mb-2">Ordem</label>
-                  <input
-                    type="number"
-                    value={lessonForm.orderIndex}
-                    onChange={(e) => setLessonForm({ ...lessonForm, orderIndex: parseInt(e.target.value) })}
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2"
-                    min="0"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-2">Duração (ex: 05:30)</label>
-                  <input
-                    type="text"
-                    value={lessonForm.duration}
-                    onChange={(e) => setLessonForm({ ...lessonForm, duration: e.target.value })}
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2"
-                    placeholder="00:00"
-                  />
-                </div>
               </div>
               <div>
                 <label className="block text-sm font-semibold mb-2">Link do Vídeo (YouTube ou Google Drive)</label>

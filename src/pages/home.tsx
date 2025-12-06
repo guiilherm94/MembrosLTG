@@ -55,7 +55,7 @@ export default function Home() {
       // Se houver erro, usar dados do cache
       const cachedUser = JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user') || '{}')
       setUser(cachedUser)
-      loadProducts(cachedUser.product_ids || [])
+      loadProducts(cachedUser.product_ids || [], cachedUser.id)
       return
     }
 
@@ -67,10 +67,10 @@ export default function Home() {
     sessionStorage.setItem('user', updatedUserData)
     localStorage.setItem('user', updatedUserData)
 
-    loadProducts(userData.product_ids || [])
+    loadProducts(userData.product_ids || [], userData.id)
   }
 
-  const loadProducts = async (userProductIds: string[]) => {
+  const loadProducts = async (userProductIds: string[], userId: string) => {
     const { data } = await supabase
       .from('products')
       .select(`
@@ -90,14 +90,12 @@ export default function Home() {
 
     if (data) {
       setProducts(data)
-      await calculateAllProgress(data)
+      await calculateAllProgress(data, userId)
     }
     setLoading(false)
   }
 
-  const calculateAllProgress = async (productsData: Product[]) => {
-    if (!user) return
-
+  const calculateAllProgress = async (productsData: Product[], userId: string) => {
     const progressMap: Record<string, number> = {}
 
     for (const product of productsData) {
@@ -115,7 +113,7 @@ export default function Home() {
       const { data: completedLessons } = await supabase
         .from('lesson_progress')
         .select('lesson_id')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .eq('completed', true)
         .in('lesson_id', allLessonIds)
 
