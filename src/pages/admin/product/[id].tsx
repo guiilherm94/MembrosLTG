@@ -183,14 +183,16 @@ export default function ProductManagement() {
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null)
 
   const [moduleForm, setModuleForm] = useState({
-    name: ''
+    name: '',
+    unlockAfterDays: 0
   })
 
   const [lessonForm, setLessonForm] = useState({
     name: '',
     videoUrl: '',
     description: '',
-    files: ''
+    files: '',
+    unlockAfterDays: 0
   })
 
   const [filesList, setFilesList] = useState<Array<{ name: string; url: string }>>([])
@@ -255,7 +257,8 @@ export default function ProductManagement() {
         body: JSON.stringify({
           id: editingModule.id,
           name: moduleForm.name,
-          orderIndex: editingModule.order_index // Mantém a ordem existente
+          orderIndex: editingModule.order_index, // Mantém a ordem existente
+          unlockAfterDays: moduleForm.unlockAfterDays
         })
       })
     } else {
@@ -265,14 +268,15 @@ export default function ProductManagement() {
         body: JSON.stringify({
           productId: id,
           name: moduleForm.name,
-          orderIndex: product?.modules.length || 0 // Adiciona ao final
+          orderIndex: product?.modules.length || 0, // Adiciona ao final
+          unlockAfterDays: moduleForm.unlockAfterDays
         })
       })
     }
 
     setShowModuleModal(false)
     setEditingModule(null)
-    setModuleForm({ name: '' })
+    setModuleForm({ name: '', unlockAfterDays: 0 })
     loadProduct()
   }
 
@@ -314,7 +318,8 @@ export default function ProductManagement() {
           orderIndex: editingLesson.order_index, // Mantém a ordem existente
           videoUrl: lessonForm.videoUrl,
           description: lessonForm.description,
-          files: filesList
+          files: filesList,
+          unlockAfterDays: lessonForm.unlockAfterDays
         })
       })
     } else {
@@ -328,14 +333,15 @@ export default function ProductManagement() {
           orderIndex: module?.lessons.length || 0, // Adiciona ao final
           videoUrl: lessonForm.videoUrl,
           description: lessonForm.description,
-          files: filesList
+          files: filesList,
+          unlockAfterDays: lessonForm.unlockAfterDays
         })
       })
     }
 
     setShowLessonModal(false)
     setEditingLesson(null)
-    setLessonForm({ name: '', videoUrl: '', description: '', files: '' })
+    setLessonForm({ name: '', videoUrl: '', description: '', files: '', unlockAfterDays: 0 })
     setFilesList([])
     setNewFileName('')
     setNewFileUrl('')
@@ -370,7 +376,8 @@ export default function ProductManagement() {
   const openEditModule = (module: Module) => {
     setEditingModule(module)
     setModuleForm({
-      name: module.name
+      name: module.name,
+      unlockAfterDays: module.unlock_after_days || 0
     })
     setShowModuleModal(true)
   }
@@ -382,7 +389,8 @@ export default function ProductManagement() {
       name: lesson.name,
       videoUrl: lesson.video_url || '',
       description: lesson.description || '',
-      files: ''
+      files: '',
+      unlockAfterDays: lesson.unlock_after_days || 0
     })
     setShowLessonModal(true)
   }
@@ -665,7 +673,7 @@ export default function ProductManagement() {
           <button
             onClick={() => {
               setEditingModule(null)
-              setModuleForm({ name: '' })
+              setModuleForm({ name: '', unlockAfterDays: 0 })
               setShowModuleModal(true)
             }}
             className="px-4 py-2 bg-primary text-black rounded font-semibold hover:bg-primary-dark transition"
@@ -739,6 +747,23 @@ export default function ProductManagement() {
                   required
                 />
               </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">⏱️ Liberação Progressiva</label>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-400">Liberar após</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={moduleForm.unlockAfterDays}
+                    onChange={(e) => setModuleForm({ ...moduleForm, unlockAfterDays: parseInt(e.target.value) || 0 })}
+                    className="w-20 bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-center"
+                  />
+                  <span className="text-sm text-gray-400">dias da compra</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">(0 = libera imediatamente)</p>
+              </div>
+
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
@@ -853,6 +878,23 @@ export default function ProductManagement() {
                   Links do Google Drive serão convertidos automaticamente para download direto
                 </p>
               </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">⏱️ Liberação Progressiva</label>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-400">Liberar após</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={lessonForm.unlockAfterDays}
+                    onChange={(e) => setLessonForm({ ...lessonForm, unlockAfterDays: parseInt(e.target.value) || 0 })}
+                    className="w-20 bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-center"
+                  />
+                  <span className="text-sm text-gray-400">dias da compra</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">(0 = libera imediatamente)</p>
+              </div>
+
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"

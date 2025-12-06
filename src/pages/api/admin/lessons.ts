@@ -4,7 +4,7 @@ import { convertMediaUrl } from '@/lib/media-converter'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'POST') {
-    const { moduleId, name, orderIndex, videoUrl, description, files } = req.body
+    const { moduleId, name, orderIndex, videoUrl, description, files, unlockAfterDays } = req.body
 
     let videoType = null
     let processedVideoUrl = videoUrl
@@ -26,6 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           video_type: videoType,
           description,
           files: files || [],
+          unlock_after_days: unlockAfterDays || 0,
         },
       ])
       .select()
@@ -39,7 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === 'PUT') {
-    const { id, name, orderIndex, videoUrl, description, files } = req.body
+    const { id, name, orderIndex, videoUrl, description, files, unlockAfterDays } = req.body
 
     let videoType = null
     let processedVideoUrl = videoUrl
@@ -50,17 +51,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       processedVideoUrl = converted.embedUrl || videoUrl
     }
 
+    const updateData: any = {
+      name,
+      order_index: orderIndex,
+      video_url: processedVideoUrl,
+      video_type: videoType,
+      description,
+      files,
+      updated_at: new Date().toISOString(),
+    }
+
+    if (unlockAfterDays !== undefined) updateData.unlock_after_days = unlockAfterDays
+
     const { data, error } = await supabaseAdmin
       .from('lessons')
-      .update({
-        name,
-        order_index: orderIndex,
-        video_url: processedVideoUrl,
-        video_type: videoType,
-        description,
-        files,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single()

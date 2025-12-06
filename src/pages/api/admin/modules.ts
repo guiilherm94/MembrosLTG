@@ -3,7 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'POST') {
-    const { productId, name, orderIndex } = req.body
+    const { productId, name, orderIndex, unlockAfterDays } = req.body
 
     const { data, error } = await supabaseAdmin
       .from('modules')
@@ -12,6 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           product_id: productId,
           name,
           order_index: orderIndex,
+          unlock_after_days: unlockAfterDays || 0,
         },
       ])
       .select()
@@ -25,15 +26,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === 'PUT') {
-    const { id, name, orderIndex } = req.body
+    const { id, name, orderIndex, unlockAfterDays } = req.body
+
+    const updateData: any = {
+      name,
+      order_index: orderIndex,
+      updated_at: new Date().toISOString(),
+    }
+
+    if (unlockAfterDays !== undefined) updateData.unlock_after_days = unlockAfterDays
 
     const { data, error } = await supabaseAdmin
       .from('modules')
-      .update({
-        name,
-        order_index: orderIndex,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single()

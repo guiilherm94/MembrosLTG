@@ -56,7 +56,9 @@ export default function AdminPanel() {
     name: '',
     description: '',
     bannerUrl: '',
-    saleUrl: ''
+    saleUrl: '',
+    isHidden: false,
+    unlockAfterDays: 0
   })
 
   useEffect(() => {
@@ -167,7 +169,7 @@ export default function AdminPanel() {
 
     setShowProductModal(false)
     setEditingProduct(null)
-    setProductForm({ name: '', description: '', bannerUrl: '', saleUrl: '' })
+    setProductForm({ name: '', description: '', bannerUrl: '', saleUrl: '', isHidden: false, unlockAfterDays: 0 })
     loadProducts()
   }
 
@@ -214,7 +216,9 @@ export default function AdminPanel() {
       name: product.name,
       description: product.description || '',
       bannerUrl: product.banner_url || '',
-      saleUrl: product.sale_url || ''
+      saleUrl: product.sale_url || '',
+      isHidden: product.is_hidden || false,
+      unlockAfterDays: product.unlock_after_days || 0
     })
     setShowProductModal(true)
   }
@@ -288,7 +292,7 @@ export default function AdminPanel() {
               <button
                 onClick={() => {
                   setEditingProduct(null)
-                  setProductForm({ name: '', description: '', bannerUrl: '', saleUrl: '' })
+                  setProductForm({ name: '', description: '', bannerUrl: '', saleUrl: '', isHidden: false, unlockAfterDays: 0 })
                   setShowProductModal(true)
                 }}
                 className="px-4 py-2 bg-primary text-black rounded font-semibold hover:bg-primary-dark transition"
@@ -337,13 +341,12 @@ export default function AdminPanel() {
                         </button>
                         <button
                           onClick={() => handleDuplicateProduct(product.id)}
-                          className="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 inline-flex items-center gap-1"
+                          className="p-2 bg-purple-600 text-white rounded text-sm hover:bg-purple-700"
                           title="Duplicar produto"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                           </svg>
-                          Duplicar
                         </button>
                         <button
                           onClick={() => handleDeleteProduct(product.id)}
@@ -717,6 +720,38 @@ export default function AdminPanel() {
                   className="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2"
                 />
               </div>
+
+              <div className="border-t border-zinc-800 pt-4">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={productForm.isHidden}
+                    onChange={(e) => setProductForm({ ...productForm, isHidden: e.target.checked })}
+                    className="w-4 h-4"
+                  />
+                  <div>
+                    <span className="text-sm font-semibold">Ocultar produto da home</span>
+                    <p className="text-xs text-gray-400">Produto só aparece para quem já comprou</p>
+                  </div>
+                </label>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">⏱️ Liberação Progressiva</label>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-400">Liberar após</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={productForm.unlockAfterDays}
+                    onChange={(e) => setProductForm({ ...productForm, unlockAfterDays: parseInt(e.target.value) || 0 })}
+                    className="w-20 bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-center"
+                  />
+                  <span className="text-sm text-gray-400">dias da compra</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">(0 = libera imediatamente)</p>
+              </div>
+
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
