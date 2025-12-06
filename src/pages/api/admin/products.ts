@@ -45,7 +45,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === 'PUT') {
-    const { id, name, description, bannerUrl, saleUrl, isActive, enabledPlatforms, enableAccessRemoval } = req.body
+    const { id, name, description, bannerUrl, saleUrl, isActive, enabledPlatforms, enableAccessRemoval, webhookSecret, isHidden, unlockAfterDays } = req.body
 
     const updateData: any = {
       name,
@@ -58,6 +58,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (isActive !== undefined) updateData.is_active = isActive
     if (enabledPlatforms !== undefined) updateData.enabled_platforms = enabledPlatforms
     if (enableAccessRemoval !== undefined) updateData.enable_access_removal = enableAccessRemoval
+    if (webhookSecret !== undefined) updateData.webhook_secret = webhookSecret
+    if (isHidden !== undefined) updateData.is_hidden = isHidden
+    if (unlockAfterDays !== undefined) updateData.unlock_after_days = unlockAfterDays
 
     const { data, error } = await supabaseAdmin
       .from('products')

@@ -20,7 +20,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 
 // Componente Sortável para Módulos
-function SortableModuleItem({ module, onEdit, onDelete, onNewLesson, children }: any) {
+function SortableModuleItem({ module, onEdit, onDelete, onDuplicate, onNewLesson, children }: any) {
   const {
     attributes,
     listeners,
@@ -64,6 +64,15 @@ function SortableModuleItem({ module, onEdit, onDelete, onNewLesson, children }:
             Editar
           </button>
           <button
+            onClick={() => onDuplicate(module.id)}
+            className="p-2 bg-purple-600 text-white rounded text-sm hover:bg-purple-700"
+            title="Duplicar módulo"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+          </button>
+          <button
             onClick={() => onDelete(module.id)}
             className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
           >
@@ -77,7 +86,7 @@ function SortableModuleItem({ module, onEdit, onDelete, onNewLesson, children }:
 }
 
 // Componente Sortável para Aulas
-function SortableLessonItem({ lesson, onEdit, onDelete }: any) {
+function SortableLessonItem({ lesson, onEdit, onDelete, onDuplicate }: any) {
   const {
     attributes,
     listeners,
@@ -117,6 +126,15 @@ function SortableLessonItem({ lesson, onEdit, onDelete }: any) {
           Editar
         </button>
         <button
+          onClick={() => onDuplicate(lesson.id)}
+          className="p-2 bg-purple-600 text-white rounded text-sm hover:bg-purple-700"
+          title="Duplicar aula"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+        </button>
+        <button
           onClick={() => onDelete(lesson.id)}
           className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
         >
@@ -134,7 +152,6 @@ interface Lesson {
   video_url: string
   description: string
   files: any[]
-  duration: string
 }
 
 interface Module {
@@ -166,14 +183,16 @@ export default function ProductManagement() {
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null)
 
   const [moduleForm, setModuleForm] = useState({
-    name: ''
+    name: '',
+    unlockAfterDays: 0
   })
 
   const [lessonForm, setLessonForm] = useState({
     name: '',
     videoUrl: '',
     description: '',
-    files: ''
+    files: '',
+    unlockAfterDays: 0
   })
 
   const [filesList, setFilesList] = useState<Array<{ name: string; url: string }>>([])
@@ -238,7 +257,8 @@ export default function ProductManagement() {
         body: JSON.stringify({
           id: editingModule.id,
           name: moduleForm.name,
-          orderIndex: editingModule.order_index // Mantém a ordem existente
+          orderIndex: editingModule.order_index, // Mantém a ordem existente
+          unlockAfterDays: moduleForm.unlockAfterDays
         })
       })
     } else {
@@ -248,14 +268,15 @@ export default function ProductManagement() {
         body: JSON.stringify({
           productId: id,
           name: moduleForm.name,
-          orderIndex: product?.modules.length || 0 // Adiciona ao final
+          orderIndex: product?.modules.length || 0, // Adiciona ao final
+          unlockAfterDays: moduleForm.unlockAfterDays
         })
       })
     }
 
     setShowModuleModal(false)
     setEditingModule(null)
-    setModuleForm({ name: '' })
+    setModuleForm({ name: '', unlockAfterDays: 0 })
     loadProduct()
   }
 
@@ -263,6 +284,25 @@ export default function ProductManagement() {
     if (!confirm('Deseja deletar este módulo e todas as aulas dele?')) return
     await fetch(`/api/admin/modules?id=${moduleId}`, { method: 'DELETE' })
     loadProduct()
+  }
+
+  const handleDuplicateModule = async (moduleId: string) => {
+    if (!confirm('Deseja duplicar este módulo com todas as aulas?')) return
+
+    try {
+      const response = await fetch(`/api/admin/modules/duplicate?id=${moduleId}`, {
+        method: 'POST'
+      })
+
+      if (response.ok) {
+        alert('Módulo duplicado com sucesso!')
+        loadProduct()
+      } else {
+        alert('Erro ao duplicar módulo')
+      }
+    } catch (error) {
+      alert('Erro ao duplicar módulo')
+    }
   }
 
   const handleSaveLesson = async (e: React.FormEvent) => {
@@ -278,7 +318,8 @@ export default function ProductManagement() {
           orderIndex: editingLesson.order_index, // Mantém a ordem existente
           videoUrl: lessonForm.videoUrl,
           description: lessonForm.description,
-          files: filesList
+          files: filesList,
+          unlockAfterDays: lessonForm.unlockAfterDays
         })
       })
     } else {
@@ -292,14 +333,15 @@ export default function ProductManagement() {
           orderIndex: module?.lessons.length || 0, // Adiciona ao final
           videoUrl: lessonForm.videoUrl,
           description: lessonForm.description,
-          files: filesList
+          files: filesList,
+          unlockAfterDays: lessonForm.unlockAfterDays
         })
       })
     }
 
     setShowLessonModal(false)
     setEditingLesson(null)
-    setLessonForm({ name: '', videoUrl: '', description: '', files: '' })
+    setLessonForm({ name: '', videoUrl: '', description: '', files: '', unlockAfterDays: 0 })
     setFilesList([])
     setNewFileName('')
     setNewFileUrl('')
@@ -312,10 +354,30 @@ export default function ProductManagement() {
     loadProduct()
   }
 
+  const handleDuplicateLesson = async (lessonId: string) => {
+    if (!confirm('Deseja duplicar esta aula?')) return
+
+    try {
+      const response = await fetch(`/api/admin/lessons/duplicate?id=${lessonId}`, {
+        method: 'POST'
+      })
+
+      if (response.ok) {
+        alert('Aula duplicada com sucesso!')
+        loadProduct()
+      } else {
+        alert('Erro ao duplicar aula')
+      }
+    } catch (error) {
+      alert('Erro ao duplicar aula')
+    }
+  }
+
   const openEditModule = (module: Module) => {
     setEditingModule(module)
     setModuleForm({
-      name: module.name
+      name: module.name,
+      unlockAfterDays: module.unlock_after_days || 0
     })
     setShowModuleModal(true)
   }
@@ -327,7 +389,8 @@ export default function ProductManagement() {
       name: lesson.name,
       videoUrl: lesson.video_url || '',
       description: lesson.description || '',
-      files: ''
+      files: '',
+      unlockAfterDays: lesson.unlock_after_days || 0
     })
     setShowLessonModal(true)
   }
@@ -392,6 +455,28 @@ export default function ProductManagement() {
   const copyWebhookUrl = () => {
     navigator.clipboard.writeText(webhookUrl)
     alert('URL do webhook copiada!')
+  }
+
+  const generateWebhookSecret = async () => {
+    if (!product) return
+
+    const newSecret = crypto.randomUUID()
+
+    await fetch('/api/admin/products', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: product.id,
+        name: product.name,
+        description: '',
+        bannerUrl: '',
+        saleUrl: '',
+        webhookSecret: newSecret
+      })
+    })
+
+    alert('Novo webhook secret gerado!')
+    loadProduct()
   }
 
   const sensors = useSensors(
@@ -493,20 +578,31 @@ export default function ProductManagement() {
               <div className="flex gap-2">
                 <input
                   type="text"
-                  value={webhookUrl}
+                  value={webhookUrl || 'Nenhuma URL gerada'}
                   readOnly
                   className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-4 py-2 text-gray-400"
                   placeholder="Carregando..."
                 />
-                <button
-                  onClick={copyWebhookUrl}
-                  className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 rounded font-semibold transition"
-                >
-                  Copiar
-                </button>
+                {webhookUrl ? (
+                  <button
+                    onClick={copyWebhookUrl}
+                    className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 rounded font-semibold transition"
+                  >
+                    Copiar
+                  </button>
+                ) : (
+                  <button
+                    onClick={generateWebhookSecret}
+                    className="px-4 py-2 bg-primary text-black rounded font-semibold hover:bg-primary-dark transition"
+                  >
+                    Gerar URL
+                  </button>
+                )}
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Use esta URL para configurar webhooks nas plataformas habilitadas abaixo
+                {webhookUrl
+                  ? 'Use esta URL para configurar webhooks nas plataformas habilitadas abaixo'
+                  : 'Clique em "Gerar URL" para criar o webhook deste produto'}
               </p>
             </div>
 
@@ -577,7 +673,7 @@ export default function ProductManagement() {
           <button
             onClick={() => {
               setEditingModule(null)
-              setModuleForm({ name: '' })
+              setModuleForm({ name: '', unlockAfterDays: 0 })
               setShowModuleModal(true)
             }}
             className="px-4 py-2 bg-primary text-black rounded font-semibold hover:bg-primary-dark transition"
@@ -602,6 +698,7 @@ export default function ProductManagement() {
                   module={module}
                   onEdit={openEditModule}
                   onDelete={handleDeleteModule}
+                  onDuplicate={handleDuplicateModule}
                   onNewLesson={openNewLesson}
                 >
                   {module.lessons.length > 0 && (
@@ -621,6 +718,7 @@ export default function ProductManagement() {
                               lesson={lesson}
                               onEdit={openEditLesson}
                               onDelete={handleDeleteLesson}
+                              onDuplicate={handleDuplicateLesson}
                             />
                           ))}
                         </div>
@@ -649,6 +747,23 @@ export default function ProductManagement() {
                   required
                 />
               </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">⏱️ Liberação Progressiva</label>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-400">Liberar após</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={moduleForm.unlockAfterDays}
+                    onChange={(e) => setModuleForm({ ...moduleForm, unlockAfterDays: parseInt(e.target.value) || 0 })}
+                    className="w-20 bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-center"
+                  />
+                  <span className="text-sm text-gray-400">dias da compra</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">(0 = libera imediatamente)</p>
+              </div>
+
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
@@ -763,6 +878,23 @@ export default function ProductManagement() {
                   Links do Google Drive serão convertidos automaticamente para download direto
                 </p>
               </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">⏱️ Liberação Progressiva</label>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-400">Liberar após</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={lessonForm.unlockAfterDays}
+                    onChange={(e) => setLessonForm({ ...lessonForm, unlockAfterDays: parseInt(e.target.value) || 0 })}
+                    className="w-20 bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-center"
+                  />
+                  <span className="text-sm text-gray-400">dias da compra</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">(0 = libera imediatamente)</p>
+              </div>
+
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"

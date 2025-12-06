@@ -3,6 +3,7 @@ import { useRouter } from 'next/router'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { getDriveDirectDownload } from '@/lib/media-converter'
+import { calculateUnlockStatus, formatUnlockDate } from '@/lib/access-control'
 import ThemeToggle from '@/components/ThemeToggle'
 
 interface Lesson {
@@ -13,7 +14,6 @@ interface Lesson {
   video_type: string
   description: string
   files: any[]
-  duration: string
   completed?: boolean
 }
 
@@ -40,6 +40,7 @@ export default function CoursePage() {
   const [activeTab, setActiveTab] = useState<'description' | 'files'>('description')
   const [loading, setLoading] = useState(true)
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set())
+  const [userAccessDate, setUserAccessDate] = useState<string | null>(null)
 
   useEffect(() => {
     if (!id) return
@@ -70,6 +71,18 @@ export default function CoursePage() {
       `)
       .eq('id', productId)
       .single()
+
+    // Buscar data de acesso do usuário ao produto
+    const { data: accessData } = await supabase
+      .from('user_product_access')
+      .select('granted_at')
+      .eq('user_id', user.id)
+      .eq('product_id', productId)
+      .single()
+
+    if (accessData) {
+      setUserAccessDate(accessData.granted_at)
+    }
 
     if (data) {
       const allLessonIds = data.modules.flatMap((m: Module) => m.lessons.map((l: Lesson) => l.id))
@@ -125,6 +138,20 @@ export default function CoursePage() {
 
     const user = JSON.parse(userData)
 
+    // Atualizar o estado local imediatamente para dar feedback visual
+    if (product) {
+      const updatedModules = product.modules.map(module => ({
+        ...module,
+        lessons: module.lessons.map(lesson =>
+          lesson.id === lessonId
+            ? { ...lesson, completed: !currentStatus }
+            : lesson
+        )
+      }))
+      setProduct({ ...product, modules: updatedModules })
+    }
+
+    // Atualizar no banco de dados
     if (currentStatus) {
       // Se já está completa, remove o progresso
       await supabase
@@ -142,11 +169,6 @@ export default function CoursePage() {
           completed: true,
           completed_at: new Date().toISOString()
         })
-    }
-
-    // Recarregar produto para atualizar progresso
-    if (id) {
-      loadProduct(id as string)
     }
   }
 
@@ -346,35 +368,55 @@ export default function CoursePage() {
 
                 {expandedModules.has(module.id) && (
                   <div className="bg-zinc-950">
-                    {module.lessons.map((lesson) => (
-                      <button
-                        key={lesson.id}
-                        onClick={() => setCurrentLesson(lesson)}
-                        className={`w-full px-6 py-3 text-left hover:bg-zinc-800 transition border-l-2 ${
-                          currentLesson?.id === lesson.id
-                            ? 'border-primary bg-zinc-800'
-                            : 'border-transparent'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1">
-                            <p className="text-sm font-medium">{lesson.name}</p>
-                          </div>
-                          <div
-                            className="flex-shrink-0 cursor-pointer hover:opacity-70 transition"
-                            onClick={(e) => toggleLessonCompletion(lesson.id, lesson.completed || false, e)}
-                          >
-                            {lesson.completed ? (
-                              <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                              </svg>
-                            ) : (
-                              <div className="w-5 h-5 rounded-full border-2 border-gray-600" />
+                    {module.lessons.map((lesson) => {
+                      const lessonUnlockStatus = calculateUnlockStatus(userAccessDate, lesson.unlock_after_days)
+                      const isLessonLocked = !lessonUnlockStatus.isUnlocked
+
+                      return (
+                        <button
+                          key={lesson.id}
+                          onClick={() => !isLessonLocked && setCurrentLesson(lesson)}
+                          disabled={isLessonLocked}
+                          className={`w-full px-6 py-3 text-left hover:bg-zinc-800 transition border-l-2 ${
+                            currentLesson?.id === lesson.id
+                              ? 'border-primary bg-zinc-800'
+                              : 'border-transparent'
+                          } ${isLessonLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                {isLessonLocked && (
+                                  <svg className="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                                  </svg>
+                                )}
+                                <p className="text-sm font-medium">{lesson.name}</p>
+                              </div>
+                              {isLessonLocked && lessonUnlockStatus.unlockDate && (
+                                <p className="text-xs text-yellow-500 mt-1">
+                                  Disponível em {formatUnlockDate(lessonUnlockStatus.unlockDate)}
+                                </p>
+                              )}
+                            </div>
+                            {!isLessonLocked && (
+                              <div
+                                className="flex-shrink-0 cursor-pointer hover:opacity-70 transition"
+                                onClick={(e) => toggleLessonCompletion(lesson.id, lesson.completed || false, e)}
+                              >
+                                {lesson.completed ? (
+                                  <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                  </svg>
+                                ) : (
+                                  <div className="w-5 h-5 rounded-full border-2 border-gray-600" />
+                                )}
+                              </div>
                             )}
                           </div>
-                        </div>
-                      </button>
-                    ))}
+                        </button>
+                      )
+                    })}
                   </div>
                 )}
               </div>

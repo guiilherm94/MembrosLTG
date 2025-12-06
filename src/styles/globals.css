@@ -119,3 +119,35 @@ body {
   color: var(--text-tertiary);
 }
 
+/* Melhorias de contraste no modo light */
+[data-theme="light"] .hover\:bg-zinc-800:hover {
+  background-color: #d4d4d8 !important;
+}
+
+[data-theme="light"] .hover\:bg-zinc-700:hover {
+  background-color: #a1a1aa !important;
+}
+
+[data-theme="light"] .hover\:bg-zinc-600:hover {
+  background-color: #71717a !important;
+}
+
+[data-theme="light"] .hover\:text-primary:hover {
+  color: var(--color-primary-dark) !important;
+}
+
+/* Melhorar contraste do ThemeToggle no modo light */
+[data-theme="light"] button[aria-label*="tema"] {
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="light"] button[aria-label*="tema"]:hover {
+  color: var(--color-primary-dark) !important;
+}
+
+/* Melhorar contraste dos links de menu no modo light */
+[data-theme="light"] a:hover,
+[data-theme="light"] button:hover {
+  opacity: 1 !important;
+}
+

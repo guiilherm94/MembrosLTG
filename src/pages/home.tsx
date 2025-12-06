@@ -143,7 +143,10 @@ export default function Home() {
   }
 
   const userProducts = products.filter(p => user?.product_ids?.includes(p.id))
-  const lockedProducts = products.filter(p => !user?.product_ids?.includes(p.id))
+  // Produtos ocultos só aparecem se o usuário já comprou
+  const lockedProducts = products.filter(p =>
+    !user?.product_ids?.includes(p.id) && !p.is_hidden
+  )
 
   return (
     <div className="min-h-screen bg-black">
