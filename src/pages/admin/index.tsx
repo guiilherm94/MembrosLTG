@@ -336,6 +336,18 @@ export default function AdminPanel() {
             <form onSubmit={handleSaveSettings} className="max-w-2xl">
               <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 space-y-6">
                 <div>
+                  <label className="block text-sm font-semibold mb-2">Nome do Sistema</label>
+                  <input
+                    type="text"
+                    value={settings.systemName}
+                    onChange={(e) => setSettings({ ...settings, systemName: e.target.value })}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2"
+                    placeholder="LowzinGO - Membros"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Nome exibido no cabeçalho e título das páginas</p>
+                </div>
+
+                <div>
                   <label className="block text-sm font-semibold mb-2">URL do Logo</label>
                   <input
                     type="url"
@@ -357,6 +369,46 @@ export default function AdminPanel() {
                     placeholder="https://..."
                   />
                   <p className="text-xs text-gray-500 mt-1">Banner exibido na home</p>
+                </div>
+
+                <div className="border-t border-zinc-800 pt-6">
+                  <h3 className="text-lg font-bold mb-4">Redes Sociais</h3>
+                  <p className="text-sm text-gray-400 mb-4">Links que aparecem no rodapé. Deixe vazio para não exibir.</p>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-semibold mb-2">WhatsApp</label>
+                      <input
+                        type="url"
+                        value={settings.whatsappUrl}
+                        onChange={(e) => setSettings({ ...settings, whatsappUrl: e.target.value })}
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2"
+                        placeholder="https://wa.me/..."
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold mb-2">Instagram</label>
+                      <input
+                        type="url"
+                        value={settings.instagramUrl}
+                        onChange={(e) => setSettings({ ...settings, instagramUrl: e.target.value })}
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2"
+                        placeholder="https://instagram.com/..."
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold mb-2">YouTube</label>
+                      <input
+                        type="url"
+                        value={settings.youtubeUrl}
+                        onChange={(e) => setSettings({ ...settings, youtubeUrl: e.target.value })}
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2"
+                        placeholder="https://youtube.com/@..."
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div>
