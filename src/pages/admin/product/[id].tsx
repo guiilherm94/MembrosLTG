@@ -20,7 +20,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 
 // Componente Sortável para Módulos
-function SortableModuleItem({ module, onEdit, onDelete, onNewLesson, children }: any) {
+function SortableModuleItem({ module, onEdit, onDelete, onDuplicate, onNewLesson, children }: any) {
   const {
     attributes,
     listeners,
@@ -64,6 +64,15 @@ function SortableModuleItem({ module, onEdit, onDelete, onNewLesson, children }:
             Editar
           </button>
           <button
+            onClick={() => onDuplicate(module.id)}
+            className="p-2 bg-purple-600 text-white rounded text-sm hover:bg-purple-700"
+            title="Duplicar módulo"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+          </button>
+          <button
             onClick={() => onDelete(module.id)}
             className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
           >
@@ -77,7 +86,7 @@ function SortableModuleItem({ module, onEdit, onDelete, onNewLesson, children }:
 }
 
 // Componente Sortável para Aulas
-function SortableLessonItem({ lesson, onEdit, onDelete }: any) {
+function SortableLessonItem({ lesson, onEdit, onDelete, onDuplicate }: any) {
   const {
     attributes,
     listeners,
@@ -115,6 +124,15 @@ function SortableLessonItem({ lesson, onEdit, onDelete }: any) {
           className="px-3 py-1 bg-zinc-700 text-white rounded text-sm hover:bg-zinc-600"
         >
           Editar
+        </button>
+        <button
+          onClick={() => onDuplicate(lesson.id)}
+          className="p-2 bg-purple-600 text-white rounded text-sm hover:bg-purple-700"
+          title="Duplicar aula"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
         </button>
         <button
           onClick={() => onDelete(lesson.id)}
@@ -264,6 +282,25 @@ export default function ProductManagement() {
     loadProduct()
   }
 
+  const handleDuplicateModule = async (moduleId: string) => {
+    if (!confirm('Deseja duplicar este módulo com todas as aulas?')) return
+
+    try {
+      const response = await fetch(`/api/admin/modules/duplicate?id=${moduleId}`, {
+        method: 'POST'
+      })
+
+      if (response.ok) {
+        alert('Módulo duplicado com sucesso!')
+        loadProduct()
+      } else {
+        alert('Erro ao duplicar módulo')
+      }
+    } catch (error) {
+      alert('Erro ao duplicar módulo')
+    }
+  }
+
   const handleSaveLesson = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -309,6 +346,25 @@ export default function ProductManagement() {
     if (!confirm('Deseja deletar esta aula?')) return
     await fetch(`/api/admin/lessons?id=${lessonId}`, { method: 'DELETE' })
     loadProduct()
+  }
+
+  const handleDuplicateLesson = async (lessonId: string) => {
+    if (!confirm('Deseja duplicar esta aula?')) return
+
+    try {
+      const response = await fetch(`/api/admin/lessons/duplicate?id=${lessonId}`, {
+        method: 'POST'
+      })
+
+      if (response.ok) {
+        alert('Aula duplicada com sucesso!')
+        loadProduct()
+      } else {
+        alert('Erro ao duplicar aula')
+      }
+    } catch (error) {
+      alert('Erro ao duplicar aula')
+    }
   }
 
   const openEditModule = (module: Module) => {
@@ -634,6 +690,7 @@ export default function ProductManagement() {
                   module={module}
                   onEdit={openEditModule}
                   onDelete={handleDeleteModule}
+                  onDuplicate={handleDuplicateModule}
                   onNewLesson={openNewLesson}
                 >
                   {module.lessons.length > 0 && (
@@ -653,6 +710,7 @@ export default function ProductManagement() {
                               lesson={lesson}
                               onEdit={openEditLesson}
                               onDelete={handleDeleteLesson}
+                              onDuplicate={handleDuplicateLesson}
                             />
                           ))}
                         </div>
