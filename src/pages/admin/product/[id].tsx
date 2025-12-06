@@ -134,7 +134,6 @@ interface Lesson {
   video_url: string
   description: string
   files: any[]
-  duration: string
 }
 
 interface Module {

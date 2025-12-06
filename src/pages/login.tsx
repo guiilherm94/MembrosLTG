@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
+import { useSettings } from '@/hooks/useSettings'
 
 export default function Login() {
   const router = useRouter()
+  const { settings } = useSettings()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [remember, setRemember] = useState(false)
@@ -48,7 +50,7 @@ export default function Login() {
       <div className="w-full max-w-md">
         <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-8">
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-black text-primary mb-2">KRONOS</h1>
+            <h1 className="text-4xl font-black text-primary mb-2">{settings?.system_name || 'Área de Membros'}</h1>
             <h2 className="text-xl font-semibold mb-1">Acesse sua conta</h2>
             <p className="text-gray-400 text-sm">Preencha seus dados de acesso à plataforma</p>
           </div>

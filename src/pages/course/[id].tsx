@@ -13,7 +13,6 @@ interface Lesson {
   video_type: string
   description: string
   files: any[]
-  duration: string
   completed?: boolean
 }
 
@@ -156,11 +155,6 @@ export default function CoursePage() {
           completed: true,
           completed_at: new Date().toISOString()
         })
-    }
-
-    // Recarregar produto para garantir sincronização (em background)
-    if (id) {
-      loadProduct(id as string)
     }
   }
 
