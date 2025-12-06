@@ -107,5 +107,6 @@ CREATE POLICY "Public read lessons" ON lessons FOR SELECT USING (true);
 CREATE POLICY "Users can read own progress" ON lesson_progress FOR SELECT USING (true);
 CREATE POLICY "Users can insert own progress" ON lesson_progress FOR INSERT WITH CHECK (true);
 CREATE POLICY "Users can update own progress" ON lesson_progress FOR UPDATE USING (true);
+CREATE POLICY "Users can delete own progress" ON lesson_progress FOR DELETE USING (true);
 
 CREATE POLICY "Public read site settings" ON site_settings FOR SELECT USING (true);
