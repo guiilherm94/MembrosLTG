@@ -241,14 +241,14 @@ export default function Home() {
             <svg className="w-6 h-6 text-primary" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clipRule="evenodd" />
             </svg>
-            <h2 className="text-xl font-semibold">KRONOS ®</h2>
+            <h2 className="text-xl font-semibold">{settings?.system_name || 'LowzinGO - Membros'} ®</h2>
           </div>
           <p className="text-sm text-gray-400">Área de Membros Premium</p>
         </div>
 
         {userProducts.length > 0 && (
           <section className="mb-16">
-            <h3 className="text-2xl font-bold mb-6">KRONOS ®</h3>
+            <h3 className="text-2xl font-bold mb-6">Meus Cursos</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {userProducts.map((product) => {
                 const productProgress = getProgress(product.id)
@@ -258,9 +258,19 @@ export default function Home() {
                     href={`/course/${product.id}`}
                     className="group block bg-zinc-900 rounded-lg overflow-hidden border border-zinc-800 hover:border-primary transition"
                   >
-                    <div className="aspect-video bg-zinc-800 flex items-center justify-center text-6xl font-black text-zinc-700">
-                      {product.name.charAt(0)}
-                    </div>
+                    {product.banner_url ? (
+                      <div className="aspect-video bg-zinc-800 overflow-hidden">
+                        <img
+                          src={product.banner_url.includes('drive.google.com') ? getDriveDirectView(product.banner_url) : product.banner_url}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="aspect-video bg-zinc-800 flex items-center justify-center text-6xl font-black text-zinc-700">
+                        {product.name.charAt(0)}
+                      </div>
+                    )}
                     <div className="p-4">
                       <h4 className="font-bold text-sm mb-2 line-clamp-2">{product.name}</h4>
                       <div className="mb-2">
@@ -282,13 +292,23 @@ export default function Home() {
 
         {lockedProducts.length > 0 && (
           <section>
-            <h3 className="text-2xl font-bold mb-6">KRONOS UPGRADE ®</h3>
+            <h3 className="text-2xl font-bold mb-6">Cursos Disponíveis</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {lockedProducts.map((product) => (
                 <div key={product.id} className="relative bg-zinc-900 rounded-lg overflow-hidden border border-zinc-800 opacity-60 group">
-                  <div className="aspect-video bg-zinc-800 flex items-center justify-center text-6xl font-black text-zinc-700">
-                    {product.name.charAt(0)}
-                  </div>
+                  {product.banner_url ? (
+                    <div className="aspect-video bg-zinc-800 overflow-hidden">
+                      <img
+                        src={product.banner_url.includes('drive.google.com') ? getDriveDirectView(product.banner_url) : product.banner_url}
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="aspect-video bg-zinc-800 flex items-center justify-center text-6xl font-black text-zinc-700">
+                      {product.name.charAt(0)}
+                    </div>
+                  )}
                   <div className="p-4">
                     <h4 className="font-bold text-sm mb-2 line-clamp-2">{product.name}</h4>
                     <div className="mb-2">

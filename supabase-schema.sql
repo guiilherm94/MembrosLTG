@@ -73,6 +73,7 @@ CREATE TABLE site_settings (
   logo_url TEXT,
   banner_url TEXT,
   color_scheme TEXT DEFAULT 'green',
+  default_theme TEXT DEFAULT 'dark',
   whatsapp_url TEXT,
   instagram_url TEXT,
   youtube_url TEXT,

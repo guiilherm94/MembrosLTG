@@ -18,12 +18,23 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const savedTheme = localStorage.getItem('theme') as Theme | null
     if (savedTheme) {
       setTheme(savedTheme)
+      setMounted(true)
     } else {
-      // Verificar preferência do sistema
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      setTheme(prefersDark ? 'dark' : 'light')
+      // Buscar tema padrão das configurações
+      fetch('/api/admin/settings')
+        .then(res => res.json())
+        .then(data => {
+          const defaultTheme = (data.default_theme || 'dark') as Theme
+          setTheme(defaultTheme)
+          setMounted(true)
+        })
+        .catch(() => {
+          // Fallback para preferência do sistema
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+          setTheme(prefersDark ? 'dark' : 'light')
+          setMounted(true)
+        })
     }
-    setMounted(true)
   }, [])
 
   useEffect(() => {

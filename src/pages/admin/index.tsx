@@ -37,6 +37,7 @@ export default function AdminPanel() {
     logoUrl: '',
     bannerUrl: '',
     colorScheme: 'green',
+    defaultTheme: 'dark',
     whatsappUrl: '',
     instagramUrl: '',
     youtubeUrl: '',
@@ -91,6 +92,7 @@ export default function AdminPanel() {
         logoUrl: data.logo_url || '',
         bannerUrl: data.banner_url || '',
         colorScheme: data.color_scheme || 'green',
+        defaultTheme: data.default_theme || 'dark',
         whatsappUrl: data.whatsapp_url || '',
         instagramUrl: data.instagram_url || '',
         youtubeUrl: data.youtube_url || '',
@@ -460,6 +462,35 @@ export default function AdminPanel() {
                         <p className="text-xs font-semibold text-center">{theme.name}</p>
                       </button>
                     ))}
+                  </div>
+                </div>
+
+                <div className="border-t border-zinc-800 pt-6">
+                  <label className="block text-sm font-semibold mb-2">Tema Padrão</label>
+                  <p className="text-sm text-gray-400 mb-4">Escolha o tema que será exibido por padrão para novos visitantes</p>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setSettings({ ...settings, defaultTheme: 'dark' })}
+                      className={`flex-1 p-4 rounded-lg border-2 transition ${
+                        settings.defaultTheme === 'dark'
+                          ? 'border-white bg-zinc-800'
+                          : 'border-zinc-700 hover:border-zinc-500'
+                      }`}
+                    >
+                      <p className="text-sm font-semibold">🌙 Modo Escuro</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSettings({ ...settings, defaultTheme: 'light' })}
+                      className={`flex-1 p-4 rounded-lg border-2 transition ${
+                        settings.defaultTheme === 'light'
+                          ? 'border-white bg-zinc-800'
+                          : 'border-zinc-700 hover:border-zinc-500'
+                      }`}
+                    >
+                      <p className="text-sm font-semibold">☀️ Modo Claro</p>
+                    </button>
                   </div>
                 </div>
 

@@ -4,6 +4,7 @@ interface Settings {
   logo_url: string | null
   banner_url: string | null
   color_scheme: string
+  default_theme: string
   system_name: string
   whatsapp_url: string | null
   instagram_url: string | null

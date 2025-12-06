@@ -16,7 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === 'PUT') {
-    const { systemName, logoUrl, bannerUrl, colorScheme, whatsappUrl, instagramUrl, youtubeUrl, supportPageContent } = req.body
+    const { systemName, logoUrl, bannerUrl, colorScheme, defaultTheme, whatsappUrl, instagramUrl, youtubeUrl, supportPageContent } = req.body
 
     const { data: existing } = await supabaseAdmin
       .from('site_settings')
@@ -31,6 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (logoUrl !== undefined) updateData.logo_url = logoUrl
     if (bannerUrl !== undefined) updateData.banner_url = bannerUrl
     if (colorScheme !== undefined) updateData.color_scheme = colorScheme
+    if (defaultTheme !== undefined) updateData.default_theme = defaultTheme
     if (whatsappUrl !== undefined) updateData.whatsapp_url = whatsappUrl
     if (instagramUrl !== undefined) updateData.instagram_url = instagramUrl
     if (youtubeUrl !== undefined) updateData.youtube_url = youtubeUrl
