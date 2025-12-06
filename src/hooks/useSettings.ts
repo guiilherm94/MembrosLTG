@@ -4,6 +4,11 @@ interface Settings {
   logo_url: string | null
   banner_url: string | null
   color_scheme: string
+  system_name: string
+  whatsapp_url: string | null
+  instagram_url: string | null
+  youtube_url: string | null
+  support_page_content: string | null
 }
 
 export function useSettings() {
