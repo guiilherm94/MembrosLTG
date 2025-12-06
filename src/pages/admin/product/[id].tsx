@@ -394,6 +394,28 @@ export default function ProductManagement() {
     alert('URL do webhook copiada!')
   }
 
+  const generateWebhookSecret = async () => {
+    if (!product) return
+
+    const newSecret = crypto.randomUUID()
+
+    await fetch('/api/admin/products', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: product.id,
+        name: product.name,
+        description: '',
+        bannerUrl: '',
+        saleUrl: '',
+        webhookSecret: newSecret
+      })
+    })
+
+    alert('Novo webhook secret gerado!')
+    loadProduct()
+  }
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -493,20 +515,31 @@ export default function ProductManagement() {
               <div className="flex gap-2">
                 <input
                   type="text"
-                  value={webhookUrl}
+                  value={webhookUrl || 'Nenhuma URL gerada'}
                   readOnly
                   className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-4 py-2 text-gray-400"
                   placeholder="Carregando..."
                 />
-                <button
-                  onClick={copyWebhookUrl}
-                  className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 rounded font-semibold transition"
-                >
-                  Copiar
-                </button>
+                {webhookUrl ? (
+                  <button
+                    onClick={copyWebhookUrl}
+                    className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 rounded font-semibold transition"
+                  >
+                    Copiar
+                  </button>
+                ) : (
+                  <button
+                    onClick={generateWebhookSecret}
+                    className="px-4 py-2 bg-primary text-black rounded font-semibold hover:bg-primary-dark transition"
+                  >
+                    Gerar URL
+                  </button>
+                )}
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Use esta URL para configurar webhooks nas plataformas habilitadas abaixo
+                {webhookUrl
+                  ? 'Use esta URL para configurar webhooks nas plataformas habilitadas abaixo'
+                  : 'Clique em "Gerar URL" para criar o webhook deste produto'}
               </p>
             </div>
 
