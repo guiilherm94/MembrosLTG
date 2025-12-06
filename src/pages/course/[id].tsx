@@ -3,6 +3,7 @@ import { useRouter } from 'next/router'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { getDriveDirectDownload } from '@/lib/media-converter'
+import ThemeToggle from '@/components/ThemeToggle'
 
 interface Lesson {
   id: string
@@ -116,20 +117,37 @@ export default function CoursePage() {
     setExpandedModules(newExpanded)
   }
 
-  const markAsCompleted = async (lessonId: string) => {
+  const toggleLessonCompletion = async (lessonId: string, currentStatus: boolean, e: React.MouseEvent) => {
+    e.stopPropagation() // Evita que abra a aula ao clicar no check
+
     const userData = sessionStorage.getItem('user') || localStorage.getItem('user')
     if (!userData) return
 
     const user = JSON.parse(userData)
 
-    await supabase
-      .from('lesson_progress')
-      .upsert({
-        user_id: user.id,
-        lesson_id: lessonId,
-        completed: true,
-        completed_at: new Date().toISOString()
-      })
+    if (currentStatus) {
+      // Se já está completa, remove o progresso
+      await supabase
+        .from('lesson_progress')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('lesson_id', lessonId)
+    } else {
+      // Se não está completa, marca como completa
+      await supabase
+        .from('lesson_progress')
+        .upsert({
+          user_id: user.id,
+          lesson_id: lessonId,
+          completed: true,
+          completed_at: new Date().toISOString()
+        })
+    }
+
+    // Recarregar produto para atualizar progresso
+    if (id) {
+      loadProduct(id as string)
+    }
   }
 
   if (loading) {
@@ -148,18 +166,41 @@ export default function CoursePage() {
     )
   }
 
+  // Calcular progresso total do curso
+  const totalLessons = product.modules.reduce((acc, module) => acc + module.lessons.length, 0)
+  const completedLessons = product.modules.reduce((acc, module) =>
+    acc + module.lessons.filter(lesson => lesson.completed).length, 0
+  )
+  const progressPercentage = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0
+
   return (
     <div className="min-h-screen bg-black">
       <header className="bg-zinc-900 border-b border-zinc-800 px-6 py-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold">{product.name}</h1>
           <div className="flex items-center gap-4">
-            <button className="px-4 py-2 bg-primary/10 text-primary border border-primary rounded text-sm font-semibold flex items-center gap-2">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-              Curso Completo
-            </button>
+            <div className={`px-4 py-2 rounded text-sm font-semibold flex items-center gap-2 ${
+              progressPercentage === 100
+                ? 'bg-primary/10 text-primary border border-primary'
+                : 'bg-zinc-800 text-gray-400'
+            }`}>
+              {progressPercentage === 100 ? (
+                <>
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  Curso Completo
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  {progressPercentage}% Concluído
+                </>
+              )}
+            </div>
+            <ThemeToggle />
             <Link href="/home" className="text-white hover:text-primary">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -169,29 +210,31 @@ export default function CoursePage() {
         </div>
       </header>
 
-      <div className="flex h-[calc(100vh-73px)]">
-        <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex flex-col lg:flex-row h-[calc(100vh-73px)]">
+        <div className="flex-1 flex flex-col overflow-hidden order-1 lg:order-1">
           {currentLesson && (
             <>
               {/* Só mostra o container de vídeo se houver vídeo */}
               {currentLesson.video_url && (
-                <div className="bg-black aspect-video relative w-full flex-shrink-0">
-                  {currentLesson.video_type === 'youtube' && (
-                    <iframe
-                      src={currentLesson.video_url}
-                      className="absolute top-0 left-0 w-full h-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                  )}
-                  {currentLesson.video_type === 'drive-video' && (
-                    <iframe
-                      src={currentLesson.video_url}
-                      className="absolute top-0 left-0 w-full h-full"
-                      allow="autoplay"
-                      allowFullScreen
-                    />
-                  )}
+                <div className="bg-black w-full flex-shrink-0" style={{ maxHeight: '60vh' }}>
+                  <div className="aspect-video relative w-full h-full max-h-[60vh]">
+                    {currentLesson.video_type === 'youtube' && (
+                      <iframe
+                        src={currentLesson.video_url}
+                        className="absolute top-0 left-0 w-full h-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    )}
+                    {currentLesson.video_type === 'drive-video' && (
+                      <iframe
+                        src={currentLesson.video_url}
+                        className="absolute top-0 left-0 w-full h-full"
+                        allow="autoplay"
+                        allowFullScreen
+                      />
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -271,46 +314,42 @@ export default function CoursePage() {
           )}
         </div>
 
-        <aside className="w-96 bg-zinc-900 border-l border-zinc-800 overflow-auto">
+        <aside className="w-full lg:w-96 bg-zinc-900 border-t lg:border-t-0 lg:border-l border-zinc-800 overflow-auto order-2 lg:order-2">
           <div className="p-4 border-b border-zinc-800 sticky top-0 bg-zinc-900 z-10">
-            <h3 className="font-bold text-sm uppercase text-gray-400">FASE-1</h3>
-            <div className="flex items-center justify-between mt-1">
-              <span className="text-sm text-gray-500">7/7</span>
-              <button className="text-primary">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                </svg>
-              </button>
-            </div>
+            <h3 className="font-bold text-sm uppercase text-gray-400">Aulas</h3>
           </div>
 
           <div className="divide-y divide-zinc-800">
-            {product.modules.map((module) => (
-              <div key={module.id}>
-                <button
-                  onClick={() => toggleModule(module.id)}
-                  className="w-full px-4 py-3 flex items-center justify-between hover:bg-zinc-800 transition"
-                >
-                  <span className="font-semibold text-sm">{module.name}</span>
-                  <svg
-                    className={`w-5 h-5 transition-transform ${expandedModules.has(module.id) ? 'rotate-180' : ''}`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+            {product.modules.map((module) => {
+              const completedLessonsCount = module.lessons.filter(l => l.completed).length
+              const totalLessons = module.lessons.length
+
+              return (
+                <div key={module.id}>
+                  <button
+                    onClick={() => toggleModule(module.id)}
+                    className="w-full px-4 py-3 flex items-center justify-between hover:bg-zinc-800 transition"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-sm">{module.name}</span>
+                      <span className="text-xs text-gray-500">({completedLessonsCount}/{totalLessons})</span>
+                    </div>
+                    <svg
+                      className={`w-5 h-5 transition-transform ${expandedModules.has(module.id) ? 'rotate-180' : ''}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
 
                 {expandedModules.has(module.id) && (
                   <div className="bg-zinc-950">
                     {module.lessons.map((lesson) => (
                       <button
                         key={lesson.id}
-                        onClick={() => {
-                          setCurrentLesson(lesson)
-                          markAsCompleted(lesson.id)
-                        }}
+                        onClick={() => setCurrentLesson(lesson)}
                         className={`w-full px-6 py-3 text-left hover:bg-zinc-800 transition border-l-2 ${
                           currentLesson?.id === lesson.id
                             ? 'border-primary bg-zinc-800'
@@ -319,10 +358,12 @@ export default function CoursePage() {
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1">
-                            <p className="text-sm font-medium mb-1">{lesson.name}</p>
-                            <p className="text-xs text-gray-500">{lesson.duration || '00:00'}</p>
+                            <p className="text-sm font-medium">{lesson.name}</p>
                           </div>
-                          <div className="flex-shrink-0">
+                          <div
+                            className="flex-shrink-0 cursor-pointer hover:opacity-70 transition"
+                            onClick={(e) => toggleLessonCompletion(lesson.id, lesson.completed || false, e)}
+                          >
                             {lesson.completed ? (
                               <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -337,7 +378,7 @@ export default function CoursePage() {
                   </div>
                 )}
               </div>
-            ))}
+            )})}
           </div>
         </aside>
       </div>

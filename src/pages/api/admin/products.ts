@@ -45,18 +45,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === 'PUT') {
-    const { id, name, description, bannerUrl, saleUrl, isActive } = req.body
+    const { id, name, description, bannerUrl, saleUrl, isActive, enabledPlatforms, enableAccessRemoval } = req.body
+
+    const updateData: any = {
+      name,
+      description,
+      banner_url: bannerUrl,
+      sale_url: saleUrl,
+      updated_at: new Date().toISOString(),
+    }
+
+    if (isActive !== undefined) updateData.is_active = isActive
+    if (enabledPlatforms !== undefined) updateData.enabled_platforms = enabledPlatforms
+    if (enableAccessRemoval !== undefined) updateData.enable_access_removal = enableAccessRemoval
 
     const { data, error } = await supabaseAdmin
       .from('products')
-      .update({
-        name,
-        description,
-        banner_url: bannerUrl,
-        sale_url: saleUrl,
-        is_active: isActive,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single()

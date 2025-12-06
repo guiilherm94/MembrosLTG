@@ -16,22 +16,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === 'PUT') {
-    const { logoUrl, bannerUrl, colorScheme } = req.body
+    const { systemName, logoUrl, bannerUrl, colorScheme, defaultTheme, whatsappUrl, instagramUrl, youtubeUrl, supportPageContent } = req.body
 
     const { data: existing } = await supabaseAdmin
       .from('site_settings')
       .select('id')
       .single()
 
+    const updateData: any = {
+      updated_at: new Date().toISOString(),
+    }
+
+    if (systemName !== undefined) updateData.system_name = systemName
+    if (logoUrl !== undefined) updateData.logo_url = logoUrl
+    if (bannerUrl !== undefined) updateData.banner_url = bannerUrl
+    if (colorScheme !== undefined) updateData.color_scheme = colorScheme
+    if (defaultTheme !== undefined) updateData.default_theme = defaultTheme
+    if (whatsappUrl !== undefined) updateData.whatsapp_url = whatsappUrl
+    if (instagramUrl !== undefined) updateData.instagram_url = instagramUrl
+    if (youtubeUrl !== undefined) updateData.youtube_url = youtubeUrl
+    if (supportPageContent !== undefined) updateData.support_page_content = supportPageContent
+
     if (existing) {
       const { data, error } = await supabaseAdmin
         .from('site_settings')
-        .update({
-          logo_url: logoUrl,
-          banner_url: bannerUrl,
-          color_scheme: colorScheme,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq('id', existing.id)
         .select()
         .single()
@@ -46,9 +55,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .from('site_settings')
         .insert([
           {
+            system_name: systemName || 'LowzinGO - Membros',
             logo_url: logoUrl,
             banner_url: bannerUrl,
-            color_scheme: colorScheme,
+            color_scheme: colorScheme || 'green',
+            whatsapp_url: whatsappUrl,
+            instagram_url: instagramUrl,
+            youtube_url: youtubeUrl,
+            support_page_content: supportPageContent,
           },
         ])
         .select()

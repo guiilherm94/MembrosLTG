@@ -1,6 +1,131 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '@/lib/supabase'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+
+// Componente Sortável para Módulos
+function SortableModuleItem({ module, onEdit, onDelete, onNewLesson, children }: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: module.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style} className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
+      <div className="px-6 py-4 bg-zinc-800 flex items-center justify-between">
+        <div className="flex items-center gap-3 flex-1">
+          <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-primary">
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+            </svg>
+          </button>
+          <div>
+            <h3 className="font-bold text-lg">{module.name}</h3>
+            <p className="text-sm text-gray-400">{module.lessons.length} aulas</p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => onNewLesson(module.id)}
+            className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+          >
+            + Aula
+          </button>
+          <button
+            onClick={() => onEdit(module)}
+            className="px-3 py-1 bg-zinc-700 text-white rounded text-sm hover:bg-zinc-600"
+          >
+            Editar
+          </button>
+          <button
+            onClick={() => onDelete(module.id)}
+            className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+          >
+            Deletar
+          </button>
+        </div>
+      </div>
+      {children}
+    </div>
+  )
+}
+
+// Componente Sortável para Aulas
+function SortableLessonItem({ lesson, onEdit, onDelete }: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: lesson.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style} className="px-6 py-3 flex items-center justify-between hover:bg-zinc-800/50">
+      <div className="flex items-center gap-3 flex-1">
+        <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-primary">
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+          </svg>
+        </button>
+        <div className="flex-1">
+          <p className="font-semibold">{lesson.name}</p>
+          <div className="flex gap-4 text-xs text-gray-400 mt-1">
+            {lesson.video_url && <span>Vídeo</span>}
+            {lesson.files?.length > 0 && <span>• {lesson.files.length} arquivos</span>}
+          </div>
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <button
+          onClick={() => onEdit(lesson)}
+          className="px-3 py-1 bg-zinc-700 text-white rounded text-sm hover:bg-zinc-600"
+        >
+          Editar
+        </button>
+        <button
+          onClick={() => onDelete(lesson.id)}
+          className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+        >
+          Deletar
+        </button>
+      </div>
+    </div>
+  )
+}
 
 interface Lesson {
   id: string
@@ -23,6 +148,9 @@ interface Product {
   id: string
   name: string
   modules: Module[]
+  webhook_secret?: string
+  enabled_platforms?: string[]
+  enable_access_removal?: boolean
 }
 
 export default function ProductManagement() {
@@ -38,22 +166,25 @@ export default function ProductManagement() {
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null)
 
   const [moduleForm, setModuleForm] = useState({
-    name: '',
-    orderIndex: 0
+    name: ''
   })
 
   const [lessonForm, setLessonForm] = useState({
     name: '',
-    orderIndex: 0,
     videoUrl: '',
     description: '',
-    files: '',
-    duration: ''
+    files: ''
   })
 
   const [filesList, setFilesList] = useState<Array<{ name: string; url: string }>>([])
   const [newFileName, setNewFileName] = useState('')
   const [newFileUrl, setNewFileUrl] = useState('')
+
+  const [webhookConfig, setWebhookConfig] = useState({
+    enabledPlatforms: [] as string[],
+    enableAccessRemoval: false
+  })
+  const [webhookUrl, setWebhookUrl] = useState('')
 
   useEffect(() => {
     if (id) loadProduct()
@@ -81,6 +212,18 @@ export default function ProductManagement() {
         }))
 
       setProduct({ ...data, modules: sortedModules })
+
+      // Carregar configurações de webhook
+      setWebhookConfig({
+        enabledPlatforms: data.enabled_platforms || [],
+        enableAccessRemoval: data.enable_access_removal || false
+      })
+
+      // Gerar URL do webhook
+      if (data.webhook_secret) {
+        const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
+        setWebhookUrl(`${baseUrl}/api/webhook/${data.webhook_secret}`)
+      }
     }
     setLoading(false)
   }
@@ -94,7 +237,8 @@ export default function ProductManagement() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: editingModule.id,
-          ...moduleForm
+          name: moduleForm.name,
+          orderIndex: editingModule.order_index // Mantém a ordem existente
         })
       })
     } else {
@@ -103,14 +247,15 @@ export default function ProductManagement() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           productId: id,
-          ...moduleForm
+          name: moduleForm.name,
+          orderIndex: product?.modules.length || 0 // Adiciona ao final
         })
       })
     }
 
     setShowModuleModal(false)
     setEditingModule(null)
-    setModuleForm({ name: '', orderIndex: 0 })
+    setModuleForm({ name: '' })
     loadProduct()
   }
 
@@ -130,32 +275,31 @@ export default function ProductManagement() {
         body: JSON.stringify({
           id: editingLesson.id,
           name: lessonForm.name,
-          orderIndex: lessonForm.orderIndex,
+          orderIndex: editingLesson.order_index, // Mantém a ordem existente
           videoUrl: lessonForm.videoUrl,
           description: lessonForm.description,
-          files: filesList,
-          duration: lessonForm.duration
+          files: filesList
         })
       })
     } else {
+      const module = product?.modules.find(m => m.id === selectedModuleId)
       await fetch('/api/admin/lessons', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           moduleId: selectedModuleId,
           name: lessonForm.name,
-          orderIndex: lessonForm.orderIndex,
+          orderIndex: module?.lessons.length || 0, // Adiciona ao final
           videoUrl: lessonForm.videoUrl,
           description: lessonForm.description,
-          files: filesList,
-          duration: lessonForm.duration
+          files: filesList
         })
       })
     }
 
     setShowLessonModal(false)
     setEditingLesson(null)
-    setLessonForm({ name: '', orderIndex: 0, videoUrl: '', description: '', files: '', duration: '' })
+    setLessonForm({ name: '', videoUrl: '', description: '', files: '' })
     setFilesList([])
     setNewFileName('')
     setNewFileUrl('')
@@ -171,8 +315,7 @@ export default function ProductManagement() {
   const openEditModule = (module: Module) => {
     setEditingModule(module)
     setModuleForm({
-      name: module.name,
-      orderIndex: module.order_index
+      name: module.name
     })
     setShowModuleModal(true)
   }
@@ -182,11 +325,9 @@ export default function ProductManagement() {
     setFilesList(lesson.files || [])
     setLessonForm({
       name: lesson.name,
-      orderIndex: lesson.order_index,
       videoUrl: lesson.video_url || '',
       description: lesson.description || '',
-      files: '',
-      duration: lesson.duration || ''
+      files: ''
     })
     setShowLessonModal(true)
   }
@@ -197,14 +338,11 @@ export default function ProductManagement() {
     setFilesList([])
     setNewFileName('')
     setNewFileUrl('')
-    const module = product?.modules.find(m => m.id === moduleId)
     setLessonForm({
       name: '',
-      orderIndex: module?.lessons.length || 0,
       videoUrl: '',
       description: '',
-      files: '',
-      duration: ''
+      files: ''
     })
     setShowLessonModal(true)
   }
@@ -219,6 +357,106 @@ export default function ProductManagement() {
 
   const handleRemoveFile = (index: number) => {
     setFilesList(filesList.filter((_, i) => i !== index))
+  }
+
+  const togglePlatform = (platform: string) => {
+    setWebhookConfig(prev => {
+      const newPlatforms = prev.enabledPlatforms.includes(platform)
+        ? prev.enabledPlatforms.filter(p => p !== platform)
+        : [...prev.enabledPlatforms, platform]
+      return { ...prev, enabledPlatforms: newPlatforms }
+    })
+  }
+
+  const handleSaveWebhookConfig = async () => {
+    if (!product) return
+
+    await fetch('/api/admin/products', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: product.id,
+        name: product.name,
+        description: '',
+        bannerUrl: '',
+        saleUrl: '',
+        enabledPlatforms: webhookConfig.enabledPlatforms,
+        enableAccessRemoval: webhookConfig.enableAccessRemoval
+      })
+    })
+
+    alert('Configurações de webhook salvas!')
+    loadProduct()
+  }
+
+  const copyWebhookUrl = () => {
+    navigator.clipboard.writeText(webhookUrl)
+    alert('URL do webhook copiada!')
+  }
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  const handleDragEndModules = async (event: DragEndEvent) => {
+    const { active, over } = event
+
+    if (over && active.id !== over.id && product) {
+      const oldIndex = product.modules.findIndex((m) => m.id === active.id)
+      const newIndex = product.modules.findIndex((m) => m.id === over.id)
+
+      const newModules = arrayMove(product.modules, oldIndex, newIndex)
+
+      // Atualizar order_index de cada módulo
+      for (let i = 0; i < newModules.length; i++) {
+        await fetch('/api/admin/modules', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: newModules[i].id,
+            name: newModules[i].name,
+            orderIndex: i
+          })
+        })
+      }
+
+      loadProduct()
+    }
+  }
+
+  const handleDragEndLessons = async (moduleId: string, event: DragEndEvent) => {
+    const { active, over } = event
+
+    if (over && active.id !== over.id && product) {
+      const module = product.modules.find(m => m.id === moduleId)
+      if (!module) return
+
+      const oldIndex = module.lessons.findIndex((l) => l.id === active.id)
+      const newIndex = module.lessons.findIndex((l) => l.id === over.id)
+
+      const newLessons = arrayMove(module.lessons, oldIndex, newIndex)
+
+      // Atualizar order_index de cada aula
+      for (let i = 0; i < newLessons.length; i++) {
+        await fetch('/api/admin/lessons', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: newLessons[i].id,
+            name: newLessons[i].name,
+            orderIndex: i,
+            videoUrl: newLessons[i].video_url,
+            description: newLessons[i].description,
+            files: newLessons[i].files
+          })
+        })
+      }
+
+      loadProduct()
+    }
   }
 
   if (loading) {
@@ -244,12 +482,102 @@ export default function ProductManagement() {
       </header>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Seção de Webhook */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 mb-8">
+          <h2 className="text-xl font-bold mb-4">Configuração de Webhook</h2>
+
+          <div className="space-y-4">
+            {/* URL do Webhook */}
+            <div>
+              <label className="block text-sm font-semibold mb-2">URL do Webhook</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={webhookUrl}
+                  readOnly
+                  className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-4 py-2 text-gray-400"
+                  placeholder="Carregando..."
+                />
+                <button
+                  onClick={copyWebhookUrl}
+                  className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 rounded font-semibold transition"
+                >
+                  Copiar
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Use esta URL para configurar webhooks nas plataformas habilitadas abaixo
+              </p>
+            </div>
+
+            {/* Plataformas Habilitadas */}
+            <div>
+              <label className="block text-sm font-semibold mb-2">Plataformas Habilitadas</label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {['cartpanda', 'hotmart', 'yampi', 'kiwify'].map((platform) => (
+                  <button
+                    key={platform}
+                    type="button"
+                    onClick={() => togglePlatform(platform)}
+                    className={`p-3 rounded-lg border-2 transition ${
+                      webhookConfig.enabledPlatforms.includes(platform)
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-zinc-700 hover:border-zinc-500'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className={`w-4 h-4 rounded ${
+                        webhookConfig.enabledPlatforms.includes(platform)
+                          ? 'bg-primary'
+                          : 'bg-zinc-700'
+                      }`} />
+                      <span className="font-semibold capitalize">{platform}</span>
+                    </div>
+                    {platform === 'cartpanda' && (
+                      <p className="text-xs text-gray-500 mt-1">100% Funcional</p>
+                    )}
+                    {platform !== 'cartpanda' && (
+                      <p className="text-xs text-gray-500 mt-1">Em desenvolvimento</p>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Remoção de Acesso */}
+            <div>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={webhookConfig.enableAccessRemoval}
+                  onChange={(e) => setWebhookConfig({ ...webhookConfig, enableAccessRemoval: e.target.checked })}
+                  className="w-5 h-5"
+                />
+                <div>
+                  <span className="text-sm font-semibold">Habilitar Remoção de Acesso</span>
+                  <p className="text-xs text-gray-500">
+                    Remove automaticamente o acesso do usuário ao receber webhooks de cancelamento/reembolso
+                  </p>
+                </div>
+              </label>
+            </div>
+
+            {/* Botão Salvar */}
+            <button
+              onClick={handleSaveWebhookConfig}
+              className="px-6 py-2 bg-primary text-black rounded font-semibold hover:bg-primary-dark transition"
+            >
+              Salvar Configurações de Webhook
+            </button>
+          </div>
+        </div>
+
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold">Módulos e Aulas</h2>
           <button
             onClick={() => {
               setEditingModule(null)
-              setModuleForm({ name: '', orderIndex: product.modules.length })
+              setModuleForm({ name: '' })
               setShowModuleModal(true)
             }}
             className="px-4 py-2 bg-primary text-black rounded font-semibold hover:bg-primary-dark transition"
@@ -258,69 +586,52 @@ export default function ProductManagement() {
           </button>
         </div>
 
-        <div className="space-y-4">
-          {product.modules.map((module) => (
-            <div key={module.id} className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
-              <div className="px-6 py-4 bg-zinc-800 flex items-center justify-between">
-                <div>
-                  <h3 className="font-bold text-lg">{module.name}</h3>
-                  <p className="text-sm text-gray-400">{module.lessons.length} aulas</p>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => openNewLesson(module.id)}
-                    className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
-                  >
-                    + Aula
-                  </button>
-                  <button
-                    onClick={() => openEditModule(module)}
-                    className="px-3 py-1 bg-zinc-700 text-white rounded text-sm hover:bg-zinc-600"
-                  >
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => handleDeleteModule(module.id)}
-                    className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
-                  >
-                    Deletar
-                  </button>
-                </div>
-              </div>
-
-              {module.lessons.length > 0 && (
-                <div className="divide-y divide-zinc-800">
-                  {module.lessons.map((lesson) => (
-                    <div key={lesson.id} className="px-6 py-3 flex items-center justify-between hover:bg-zinc-800/50">
-                      <div className="flex-1">
-                        <p className="font-semibold">{lesson.name}</p>
-                        <div className="flex gap-4 text-xs text-gray-400 mt-1">
-                          <span>{lesson.duration || '00:00'}</span>
-                          {lesson.video_url && <span>• Vídeo</span>}
-                          {lesson.files?.length > 0 && <span>• {lesson.files.length} arquivos</span>}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEndModules}
+        >
+          <SortableContext
+            items={product.modules.map(m => m.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-4">
+              {product.modules.map((module) => (
+                <SortableModuleItem
+                  key={module.id}
+                  module={module}
+                  onEdit={openEditModule}
+                  onDelete={handleDeleteModule}
+                  onNewLesson={openNewLesson}
+                >
+                  {module.lessons.length > 0 && (
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={(event) => handleDragEndLessons(module.id, event)}
+                    >
+                      <SortableContext
+                        items={module.lessons.map(l => l.id)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        <div className="divide-y divide-zinc-800">
+                          {module.lessons.map((lesson) => (
+                            <SortableLessonItem
+                              key={lesson.id}
+                              lesson={lesson}
+                              onEdit={openEditLesson}
+                              onDelete={handleDeleteLesson}
+                            />
+                          ))}
                         </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => openEditLesson(lesson)}
-                          className="px-3 py-1 bg-zinc-700 text-white rounded text-sm hover:bg-zinc-600"
-                        >
-                          Editar
-                        </button>
-                        <button
-                          onClick={() => handleDeleteLesson(lesson.id)}
-                          className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
-                        >
-                          Deletar
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                      </SortableContext>
+                    </DndContext>
+                  )}
+                </SortableModuleItem>
+              ))}
             </div>
-          ))}
-        </div>
+          </SortableContext>
+        </DndContext>
       </div>
 
       {showModuleModal && (
@@ -336,16 +647,6 @@ export default function ProductManagement() {
                   onChange={(e) => setModuleForm({ ...moduleForm, name: e.target.value })}
                   className="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2"
                   required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold mb-2">Ordem</label>
-                <input
-                  type="number"
-                  value={moduleForm.orderIndex}
-                  onChange={(e) => setModuleForm({ ...moduleForm, orderIndex: parseInt(e.target.value) })}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2"
-                  min="0"
                 />
               </div>
               <div className="flex gap-3 pt-4">
@@ -382,28 +683,6 @@ export default function ProductManagement() {
                   className="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2"
                   required
                 />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold mb-2">Ordem</label>
-                  <input
-                    type="number"
-                    value={lessonForm.orderIndex}
-                    onChange={(e) => setLessonForm({ ...lessonForm, orderIndex: parseInt(e.target.value) })}
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2"
-                    min="0"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-2">Duração (ex: 05:30)</label>
-                  <input
-                    type="text"
-                    value={lessonForm.duration}
-                    onChange={(e) => setLessonForm({ ...lessonForm, duration: e.target.value })}
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2"
-                    placeholder="00:00"
-                  />
-                </div>
               </div>
               <div>
                 <label className="block text-sm font-semibold mb-2">Link do Vídeo (YouTube ou Google Drive)</label>
