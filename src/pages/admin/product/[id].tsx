@@ -1,6 +1,131 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '@/lib/supabase'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+
+// Componente Sortável para Módulos
+function SortableModuleItem({ module, onEdit, onDelete, onNewLesson, children }: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: module.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style} className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
+      <div className="px-6 py-4 bg-zinc-800 flex items-center justify-between">
+        <div className="flex items-center gap-3 flex-1">
+          <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-primary">
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+            </svg>
+          </button>
+          <div>
+            <h3 className="font-bold text-lg">{module.name}</h3>
+            <p className="text-sm text-gray-400">{module.lessons.length} aulas</p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => onNewLesson(module.id)}
+            className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+          >
+            + Aula
+          </button>
+          <button
+            onClick={() => onEdit(module)}
+            className="px-3 py-1 bg-zinc-700 text-white rounded text-sm hover:bg-zinc-600"
+          >
+            Editar
+          </button>
+          <button
+            onClick={() => onDelete(module.id)}
+            className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+          >
+            Deletar
+          </button>
+        </div>
+      </div>
+      {children}
+    </div>
+  )
+}
+
+// Componente Sortável para Aulas
+function SortableLessonItem({ lesson, onEdit, onDelete }: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: lesson.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style} className="px-6 py-3 flex items-center justify-between hover:bg-zinc-800/50">
+      <div className="flex items-center gap-3 flex-1">
+        <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-primary">
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+          </svg>
+        </button>
+        <div className="flex-1">
+          <p className="font-semibold">{lesson.name}</p>
+          <div className="flex gap-4 text-xs text-gray-400 mt-1">
+            {lesson.video_url && <span>Vídeo</span>}
+            {lesson.files?.length > 0 && <span>• {lesson.files.length} arquivos</span>}
+          </div>
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <button
+          onClick={() => onEdit(lesson)}
+          className="px-3 py-1 bg-zinc-700 text-white rounded text-sm hover:bg-zinc-600"
+        >
+          Editar
+        </button>
+        <button
+          onClick={() => onDelete(lesson.id)}
+          className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+        >
+          Deletar
+        </button>
+      </div>
+    </div>
+  )
+}
 
 interface Lesson {
   id: string
@@ -213,6 +338,71 @@ export default function ProductManagement() {
     setFilesList(filesList.filter((_, i) => i !== index))
   }
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  const handleDragEndModules = async (event: DragEndEvent) => {
+    const { active, over } = event
+
+    if (over && active.id !== over.id && product) {
+      const oldIndex = product.modules.findIndex((m) => m.id === active.id)
+      const newIndex = product.modules.findIndex((m) => m.id === over.id)
+
+      const newModules = arrayMove(product.modules, oldIndex, newIndex)
+
+      // Atualizar order_index de cada módulo
+      for (let i = 0; i < newModules.length; i++) {
+        await fetch('/api/admin/modules', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: newModules[i].id,
+            name: newModules[i].name,
+            orderIndex: i
+          })
+        })
+      }
+
+      loadProduct()
+    }
+  }
+
+  const handleDragEndLessons = async (moduleId: string, event: DragEndEvent) => {
+    const { active, over } = event
+
+    if (over && active.id !== over.id && product) {
+      const module = product.modules.find(m => m.id === moduleId)
+      if (!module) return
+
+      const oldIndex = module.lessons.findIndex((l) => l.id === active.id)
+      const newIndex = module.lessons.findIndex((l) => l.id === over.id)
+
+      const newLessons = arrayMove(module.lessons, oldIndex, newIndex)
+
+      // Atualizar order_index de cada aula
+      for (let i = 0; i < newLessons.length; i++) {
+        await fetch('/api/admin/lessons', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: newLessons[i].id,
+            name: newLessons[i].name,
+            orderIndex: i,
+            videoUrl: newLessons[i].video_url,
+            description: newLessons[i].description,
+            files: newLessons[i].files
+          })
+        })
+      }
+
+      loadProduct()
+    }
+  }
+
   if (loading) {
     return <div className="min-h-screen bg-black flex items-center justify-center"><div className="text-primary text-xl">Carregando...</div></div>
   }
@@ -250,68 +440,52 @@ export default function ProductManagement() {
           </button>
         </div>
 
-        <div className="space-y-4">
-          {product.modules.map((module) => (
-            <div key={module.id} className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
-              <div className="px-6 py-4 bg-zinc-800 flex items-center justify-between">
-                <div>
-                  <h3 className="font-bold text-lg">{module.name}</h3>
-                  <p className="text-sm text-gray-400">{module.lessons.length} aulas</p>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => openNewLesson(module.id)}
-                    className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
-                  >
-                    + Aula
-                  </button>
-                  <button
-                    onClick={() => openEditModule(module)}
-                    className="px-3 py-1 bg-zinc-700 text-white rounded text-sm hover:bg-zinc-600"
-                  >
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => handleDeleteModule(module.id)}
-                    className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
-                  >
-                    Deletar
-                  </button>
-                </div>
-              </div>
-
-              {module.lessons.length > 0 && (
-                <div className="divide-y divide-zinc-800">
-                  {module.lessons.map((lesson) => (
-                    <div key={lesson.id} className="px-6 py-3 flex items-center justify-between hover:bg-zinc-800/50">
-                      <div className="flex-1">
-                        <p className="font-semibold">{lesson.name}</p>
-                        <div className="flex gap-4 text-xs text-gray-400 mt-1">
-                          {lesson.video_url && <span>Vídeo</span>}
-                          {lesson.files?.length > 0 && <span>• {lesson.files.length} arquivos</span>}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEndModules}
+        >
+          <SortableContext
+            items={product.modules.map(m => m.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-4">
+              {product.modules.map((module) => (
+                <SortableModuleItem
+                  key={module.id}
+                  module={module}
+                  onEdit={openEditModule}
+                  onDelete={handleDeleteModule}
+                  onNewLesson={openNewLesson}
+                >
+                  {module.lessons.length > 0 && (
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={(event) => handleDragEndLessons(module.id, event)}
+                    >
+                      <SortableContext
+                        items={module.lessons.map(l => l.id)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        <div className="divide-y divide-zinc-800">
+                          {module.lessons.map((lesson) => (
+                            <SortableLessonItem
+                              key={lesson.id}
+                              lesson={lesson}
+                              onEdit={openEditLesson}
+                              onDelete={handleDeleteLesson}
+                            />
+                          ))}
                         </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => openEditLesson(lesson)}
-                          className="px-3 py-1 bg-zinc-700 text-white rounded text-sm hover:bg-zinc-600"
-                        >
-                          Editar
-                        </button>
-                        <button
-                          onClick={() => handleDeleteLesson(lesson.id)}
-                          className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
-                        >
-                          Deletar
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                      </SortableContext>
+                    </DndContext>
+                  )}
+                </SortableModuleItem>
+              ))}
             </div>
-          ))}
-        </div>
+          </SortableContext>
+        </DndContext>
       </div>
 
       {showModuleModal && (
