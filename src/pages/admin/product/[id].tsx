@@ -408,7 +408,8 @@ export default function ProductManagement() {
       name: '',
       videoUrl: '',
       description: '',
-      files: ''
+      files: '',
+      unlockAfterDays: 0
     })
     setShowLessonModal(true)
   }
