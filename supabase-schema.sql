@@ -107,5 +107,56 @@ CREATE POLICY "Public read lessons" ON lessons FOR SELECT USING (true);
 CREATE POLICY "Users can read own progress" ON lesson_progress FOR SELECT USING (true);
 CREATE POLICY "Users can insert own progress" ON lesson_progress FOR INSERT WITH CHECK (true);
 CREATE POLICY "Users can update own progress" ON lesson_progress FOR UPDATE USING (true);
+CREATE POLICY "Users can delete own progress" ON lesson_progress FOR DELETE USING (true);
 
 CREATE POLICY "Public read site settings" ON site_settings FOR SELECT USING (true);
+
+-- PUSH SUBSCRIPTIONS TABLE
+CREATE TABLE push_subscriptions (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  subscription JSONB NOT NULL,
+  endpoint TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(user_id, endpoint)
+);
+
+CREATE INDEX idx_push_subscriptions_user ON push_subscriptions(user_id);
+CREATE INDEX idx_push_subscriptions_endpoint ON push_subscriptions(endpoint);
+
+-- PUSH NOTIFICATIONS TABLE
+CREATE TABLE push_notifications (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  icon TEXT DEFAULT '/icons/icon-192.png',
+  badge TEXT DEFAULT '/icons/icon-192.png',
+  url TEXT,
+  sent_by UUID REFERENCES users(id) ON DELETE SET NULL,
+  sent_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  recipients_count INTEGER DEFAULT 0,
+  success_count INTEGER DEFAULT 0,
+  failure_count INTEGER DEFAULT 0,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'sending', 'completed', 'failed')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_push_notifications_sent_by ON push_notifications(sent_by);
+CREATE INDEX idx_push_notifications_status ON push_notifications(status);
+CREATE INDEX idx_push_notifications_sent_at ON push_notifications(sent_at DESC);
+
+-- RLS POLICIES FOR PUSH SUBSCRIPTIONS
+ALTER TABLE push_subscriptions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can read own subscriptions" ON push_subscriptions FOR SELECT USING (true);
+CREATE POLICY "Users can insert own subscriptions" ON push_subscriptions FOR INSERT WITH CHECK (true);
+CREATE POLICY "Users can update own subscriptions" ON push_subscriptions FOR UPDATE USING (true);
+CREATE POLICY "Users can delete own subscriptions" ON push_subscriptions FOR DELETE USING (true);
+
+-- RLS POLICIES FOR PUSH NOTIFICATIONS
+ALTER TABLE push_notifications ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public can read notifications" ON push_notifications FOR SELECT USING (true);
+CREATE POLICY "Authenticated users can create notifications" ON push_notifications FOR INSERT WITH CHECK (true);
+CREATE POLICY "Authenticated users can update notifications" ON push_notifications FOR UPDATE USING (true);
