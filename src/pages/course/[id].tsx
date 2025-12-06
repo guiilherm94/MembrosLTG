@@ -13,7 +13,6 @@ interface Lesson {
   video_type: string
   description: string
   files: any[]
-  duration: string
   completed?: boolean
 }
 
@@ -125,6 +124,20 @@ export default function CoursePage() {
 
     const user = JSON.parse(userData)
 
+    // Atualizar o estado local imediatamente para dar feedback visual
+    if (product) {
+      const updatedModules = product.modules.map(module => ({
+        ...module,
+        lessons: module.lessons.map(lesson =>
+          lesson.id === lessonId
+            ? { ...lesson, completed: !currentStatus }
+            : lesson
+        )
+      }))
+      setProduct({ ...product, modules: updatedModules })
+    }
+
+    // Atualizar no banco de dados
     if (currentStatus) {
       // Se já está completa, remove o progresso
       await supabase
@@ -142,11 +155,6 @@ export default function CoursePage() {
           completed: true,
           completed_at: new Date().toISOString()
         })
-    }
-
-    // Recarregar produto para atualizar progresso
-    if (id) {
-      loadProduct(id as string)
     }
   }
 

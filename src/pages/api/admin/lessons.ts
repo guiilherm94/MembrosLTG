@@ -4,7 +4,7 @@ import { convertMediaUrl } from '@/lib/media-converter'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'POST') {
-    const { moduleId, name, orderIndex, videoUrl, description, files, duration } = req.body
+    const { moduleId, name, orderIndex, videoUrl, description, files } = req.body
 
     let videoType = null
     let processedVideoUrl = videoUrl
@@ -26,7 +26,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           video_type: videoType,
           description,
           files: files || [],
-          duration,
         },
       ])
       .select()
@@ -40,7 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === 'PUT') {
-    const { id, name, orderIndex, videoUrl, description, files, duration } = req.body
+    const { id, name, orderIndex, videoUrl, description, files } = req.body
 
     let videoType = null
     let processedVideoUrl = videoUrl
@@ -60,7 +59,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         video_type: videoType,
         description,
         files,
-        duration,
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)
