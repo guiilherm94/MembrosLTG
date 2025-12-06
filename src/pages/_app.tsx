@@ -2,6 +2,7 @@ import '@/styles/globals.css'
 import type { AppProps } from 'next/app'
 import { useEffect, useState } from 'react'
 import { themes } from '@/lib/themes'
+import { ThemeProvider } from '@/contexts/ThemeContext'
 
 export default function App({ Component, pageProps }: AppProps) {
   const [theme, setTheme] = useState('green')
@@ -26,5 +27,9 @@ export default function App({ Component, pageProps }: AppProps) {
     }
   }, [theme])
 
-  return <Component {...pageProps} />
+  return (
+    <ThemeProvider>
+      <Component {...pageProps} />
+    </ThemeProvider>
+  )
 }
