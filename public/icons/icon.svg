@@ -1,0 +1,27 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" rx="128" fill="#000000"/>
+
+  <!-- Main Icon Shape - Play button with book/learning concept -->
+  <g transform="translate(106, 106)">
+    <!-- Outer circle -->
+    <circle cx="150" cy="150" r="150" fill="#22c55e" opacity="0.15"/>
+
+    <!-- Middle circle -->
+    <circle cx="150" cy="150" r="120" fill="#22c55e" opacity="0.25"/>
+
+    <!-- Inner play/learning icon -->
+    <circle cx="150" cy="150" r="90" fill="#22c55e"/>
+
+    <!-- Play triangle -->
+    <path d="M 130 110 L 130 190 L 190 150 Z" fill="#000000"/>
+
+    <!-- Book pages accent -->
+    <rect x="115" y="165" width="70" height="3" rx="1.5" fill="#000000" opacity="0.3"/>
+    <rect x="115" y="172" width="55" height="3" rx="1.5" fill="#000000" opacity="0.3"/>
+  </g>
+
+  <!-- Optional: Add your custom logo here by replacing the content above -->
+  <!-- To use a PNG instead, simply replace this SVG file with icon.svg.bak -->
+  <!-- and add your PNG files as icon-192.png and icon-512.png -->
+</svg>

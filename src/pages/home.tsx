@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { useSettings } from '@/hooks/useSettings'
 import { getDriveDirectView } from '@/lib/media-converter'
 import ThemeToggle from '@/components/ThemeToggle'
+import PushNotificationPrompt from '@/components/PushNotificationPrompt'
 
 interface Product {
   id: string
@@ -376,6 +377,9 @@ export default function Home() {
           )}
         </footer>
       </main>
+
+      {/* Prompt de notificações push */}
+      <PushNotificationPrompt />
     </div>
   )
 }
