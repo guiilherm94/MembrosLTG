@@ -18,6 +18,8 @@ interface Product {
   banner_url: string
   sale_url: string
   is_active: boolean
+  is_hidden?: boolean
+  unlock_after_days?: number
   modules?: any[]
 }
 

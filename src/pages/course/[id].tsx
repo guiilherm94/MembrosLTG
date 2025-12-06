@@ -14,6 +14,7 @@ interface Lesson {
   video_type: string
   description: string
   files: any[]
+  unlock_after_days?: number
   completed?: boolean
 }
 
@@ -21,6 +22,7 @@ interface Module {
   id: string
   name: string
   order_index: number
+  unlock_after_days?: number
   lessons: Lesson[]
 }
 
@@ -28,6 +30,7 @@ interface Product {
   id: string
   name: string
   description: string
+  unlock_after_days?: number
   modules: Module[]
 }
 
