@@ -136,13 +136,13 @@ export default function Suporte() {
         </div>
 
         {/* Links sociais se disponíveis */}
-        {(settings?.whatsappUrl || settings?.instagramUrl || settings?.youtubeUrl) && (
+        {(settings?.whatsapp_url || settings?.instagram_url || settings?.youtube_url) && (
           <div className="mt-8 bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <h2 className="text-lg font-semibold mb-4">Fale conosco</h2>
             <div className="flex gap-4">
-              {settings?.whatsappUrl && (
+              {settings?.whatsapp_url && (
                 <a
-                  href={settings.whatsappUrl}
+                  href={settings.whatsapp_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded transition"
@@ -153,9 +153,9 @@ export default function Suporte() {
                   WhatsApp
                 </a>
               )}
-              {settings?.instagramUrl && (
+              {settings?.instagram_url && (
                 <a
-                  href={settings.instagramUrl}
+                  href={settings.instagram_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 px-4 py-2 bg-pink-600 hover:bg-pink-700 rounded transition"
@@ -166,9 +166,9 @@ export default function Suporte() {
                   Instagram
                 </a>
               )}
-              {settings?.youtubeUrl && (
+              {settings?.youtube_url && (
                 <a
-                  href={settings.youtubeUrl}
+                  href={settings.youtube_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded transition"
