@@ -411,6 +411,18 @@ export default function AdminPanel() {
                   </div>
                 </div>
 
+                <div className="border-t border-zinc-800 pt-6">
+                  <h3 className="text-lg font-bold mb-2">Página de Suporte</h3>
+                  <p className="text-sm text-gray-400 mb-4">Conteúdo HTML que será exibido na página de suporte para os usuários.</p>
+                  <textarea
+                    value={settings.supportPageContent}
+                    onChange={(e) => setSettings({ ...settings, supportPageContent: e.target.value })}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2 h-48 font-mono text-sm"
+                    placeholder="<h2>Como podemos ajudar?</h2>&#10;<p>Entre em contato através do WhatsApp...</p>"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Use HTML para formatar o conteúdo. Tags suportadas: h1-h6, p, ul, ol, li, a, strong, em, br</p>
+                </div>
+
                 <div>
                   <label className="block text-sm font-semibold mb-3">Esquema de Cores</label>
                   <div className="grid grid-cols-5 gap-3">

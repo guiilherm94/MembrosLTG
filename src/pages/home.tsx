@@ -28,6 +28,7 @@ export default function Home() {
   const [products, setProducts] = useState<Product[]>([])
   const [progress, setProgress] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
     const userData = sessionStorage.getItem('user') || localStorage.getItem('user')
@@ -147,10 +148,51 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-black">
+      {/* Menu lateral */}
+      <div className={`fixed inset-0 z-50 transition-opacity ${menuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        <div className="absolute inset-0 bg-black/70" onClick={() => setMenuOpen(false)} />
+        <div className={`absolute left-0 top-0 bottom-0 w-72 bg-zinc-900 border-r border-zinc-800 transform transition-transform ${menuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+          <div className="p-6 border-b border-zinc-800 flex items-center justify-between">
+            <h2 className="text-lg font-bold">{settings?.system_name || 'LowzinGO - Membros'}</h2>
+            <button onClick={() => setMenuOpen(false)} className="text-gray-400 hover:text-white">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <nav className="p-4">
+            <Link href="/home" className="flex items-center gap-3 px-4 py-3 rounded hover:bg-zinc-800 transition">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+              <span className="font-semibold">Home</span>
+            </Link>
+            <Link href="/perfil" className="flex items-center gap-3 px-4 py-3 rounded hover:bg-zinc-800 transition">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <span className="font-semibold">Meu Perfil</span>
+            </Link>
+            <Link href="/suporte" className="flex items-center gap-3 px-4 py-3 rounded hover:bg-zinc-800 transition">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+              <span className="font-semibold">Suporte</span>
+            </Link>
+            <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded hover:bg-zinc-800 transition text-red-400">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              <span className="font-semibold">Sair</span>
+            </button>
+          </nav>
+        </div>
+      </div>
+
       <header className="bg-zinc-900 border-b border-zinc-800">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-8">
-            <button className="text-primary">
+            <button onClick={() => setMenuOpen(true)} className="text-primary">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
@@ -167,11 +209,11 @@ export default function Home() {
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="text-primary">
+            <Link href="/home" className="text-primary">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
               </svg>
-            </button>
+            </Link>
             <button onClick={handleLogout} className="text-primary">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
