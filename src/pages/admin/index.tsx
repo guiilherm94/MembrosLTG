@@ -33,9 +33,14 @@ export default function AdminPanel() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
 
   const [settings, setSettings] = useState({
+    systemName: 'LowzinGO - Membros',
     logoUrl: '',
     bannerUrl: '',
-    colorScheme: 'green'
+    colorScheme: 'green',
+    whatsappUrl: '',
+    instagramUrl: '',
+    youtubeUrl: '',
+    supportPageContent: ''
   })
 
   const [userForm, setUserForm] = useState({
@@ -82,9 +87,14 @@ export default function AdminPanel() {
     const data = await res.json()
     if (data) {
       setSettings({
+        systemName: data.system_name || 'LowzinGO - Membros',
         logoUrl: data.logo_url || '',
         bannerUrl: data.banner_url || '',
-        colorScheme: data.color_scheme || 'green'
+        colorScheme: data.color_scheme || 'green',
+        whatsappUrl: data.whatsapp_url || '',
+        instagramUrl: data.instagram_url || '',
+        youtubeUrl: data.youtube_url || '',
+        supportPageContent: data.support_page_content || ''
       })
     }
   }

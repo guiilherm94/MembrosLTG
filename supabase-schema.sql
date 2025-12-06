@@ -69,14 +69,19 @@ CREATE INDEX idx_lesson_progress_lesson ON lesson_progress(lesson_id);
 -- SITE SETTINGS TABLE
 CREATE TABLE site_settings (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  system_name TEXT DEFAULT 'LowzinGO - Membros',
   logo_url TEXT,
   banner_url TEXT,
   color_scheme TEXT DEFAULT 'green',
+  whatsapp_url TEXT,
+  instagram_url TEXT,
+  youtube_url TEXT,
+  support_page_content TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-INSERT INTO site_settings (color_scheme) VALUES ('green');
+INSERT INTO site_settings (color_scheme, system_name) VALUES ('green', 'LowzinGO - Membros');
 
 -- RLS POLICIES
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
