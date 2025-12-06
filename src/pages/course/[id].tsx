@@ -157,21 +157,55 @@ export default function CoursePage() {
     // Atualizar no banco de dados
     if (currentStatus) {
       // Se já está completa, remove o progresso
-      await supabase
+      const { error } = await supabase
         .from('lesson_progress')
         .delete()
         .eq('user_id', user.id)
         .eq('lesson_id', lessonId)
+
+      if (error) {
+        console.error('Erro ao desmarcar aula:', error)
+        // Reverte o estado local em caso de erro
+        if (product) {
+          const revertedModules = product.modules.map(module => ({
+            ...module,
+            lessons: module.lessons.map(lesson =>
+              lesson.id === lessonId
+                ? { ...lesson, completed: true }
+                : lesson
+            )
+          }))
+          setProduct({ ...product, modules: revertedModules })
+        }
+      }
     } else {
       // Se não está completa, marca como completa
-      await supabase
+      const { error } = await supabase
         .from('lesson_progress')
         .upsert({
           user_id: user.id,
           lesson_id: lessonId,
           completed: true,
           completed_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,lesson_id'
         })
+
+      if (error) {
+        console.error('Erro ao marcar aula:', error)
+        // Reverte o estado local em caso de erro
+        if (product) {
+          const revertedModules = product.modules.map(module => ({
+            ...module,
+            lessons: module.lessons.map(lesson =>
+              lesson.id === lessonId
+                ? { ...lesson, completed: false }
+                : lesson
+            )
+          }))
+          setProduct({ ...product, modules: revertedModules })
+        }
+      }
     }
   }
 

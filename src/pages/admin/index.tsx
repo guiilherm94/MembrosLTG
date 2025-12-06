@@ -591,8 +591,8 @@ export default function AdminPanel() {
       </div>
 
       {showUserModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg max-w-lg w-full p-6">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg max-w-lg w-full p-6 my-8 max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-bold mb-4">{editingUser ? 'Editar Usuário' : 'Novo Usuário'}</h3>
             <form onSubmit={handleSaveUser} className="space-y-4">
               <div>
@@ -681,8 +681,8 @@ export default function AdminPanel() {
       )}
 
       {showProductModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg max-w-lg w-full p-6">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg max-w-lg w-full p-6 my-8 max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-bold mb-4">{editingProduct ? 'Editar Produto' : 'Novo Produto'}</h3>
             <form onSubmit={handleSaveProduct} className="space-y-4">
               <div>
