@@ -169,29 +169,31 @@ export default function CoursePage() {
         </div>
       </header>
 
-      <div className="flex h-[calc(100vh-73px)]">
-        <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex flex-col lg:flex-row h-[calc(100vh-73px)]">
+        <div className="flex-1 flex flex-col overflow-hidden order-1 lg:order-1">
           {currentLesson && (
             <>
               {/* Só mostra o container de vídeo se houver vídeo */}
               {currentLesson.video_url && (
-                <div className="bg-black aspect-video relative w-full flex-shrink-0">
-                  {currentLesson.video_type === 'youtube' && (
-                    <iframe
-                      src={currentLesson.video_url}
-                      className="absolute top-0 left-0 w-full h-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                  )}
-                  {currentLesson.video_type === 'drive-video' && (
-                    <iframe
-                      src={currentLesson.video_url}
-                      className="absolute top-0 left-0 w-full h-full"
-                      allow="autoplay"
-                      allowFullScreen
-                    />
-                  )}
+                <div className="bg-black w-full flex-shrink-0" style={{ maxHeight: '60vh' }}>
+                  <div className="aspect-video relative w-full h-full max-h-[60vh]">
+                    {currentLesson.video_type === 'youtube' && (
+                      <iframe
+                        src={currentLesson.video_url}
+                        className="absolute top-0 left-0 w-full h-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    )}
+                    {currentLesson.video_type === 'drive-video' && (
+                      <iframe
+                        src={currentLesson.video_url}
+                        className="absolute top-0 left-0 w-full h-full"
+                        allow="autoplay"
+                        allowFullScreen
+                      />
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -271,17 +273,9 @@ export default function CoursePage() {
           )}
         </div>
 
-        <aside className="w-96 bg-zinc-900 border-l border-zinc-800 overflow-auto">
+        <aside className="w-full lg:w-96 bg-zinc-900 border-t lg:border-t-0 lg:border-l border-zinc-800 overflow-auto order-2 lg:order-2">
           <div className="p-4 border-b border-zinc-800 sticky top-0 bg-zinc-900 z-10">
-            <h3 className="font-bold text-sm uppercase text-gray-400">FASE-1</h3>
-            <div className="flex items-center justify-between mt-1">
-              <span className="text-sm text-gray-500">7/7</span>
-              <button className="text-primary">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                </svg>
-              </button>
-            </div>
+            <h3 className="font-bold text-sm uppercase text-gray-400">Aulas</h3>
           </div>
 
           <div className="divide-y divide-zinc-800">
@@ -304,7 +298,7 @@ export default function CoursePage() {
 
                 {expandedModules.has(module.id) && (
                   <div className="bg-zinc-950">
-                    {module.lessons.map((lesson) => (
+                    {module.lessons.map((lesson, lessonIndex) => (
                       <button
                         key={lesson.id}
                         onClick={() => {
@@ -319,8 +313,10 @@ export default function CoursePage() {
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1">
-                            <p className="text-sm font-medium mb-1">{lesson.name}</p>
-                            <p className="text-xs text-gray-500">{lesson.duration || '00:00'}</p>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-xs text-gray-500">({lessonIndex + 1}/{module.lessons.length})</span>
+                              <p className="text-sm font-medium">{lesson.name}</p>
+                            </div>
                           </div>
                           <div className="flex-shrink-0">
                             {lesson.completed ? (
