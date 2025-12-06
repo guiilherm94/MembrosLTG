@@ -152,12 +152,14 @@ interface Lesson {
   video_url: string
   description: string
   files: any[]
+  unlock_after_days?: number
 }
 
 interface Module {
   id: string
   name: string
   order_index: number
+  unlock_after_days?: number
   lessons: Lesson[]
 }
 
@@ -168,6 +170,7 @@ interface Product {
   webhook_secret?: string
   enabled_platforms?: string[]
   enable_access_removal?: boolean
+  unlock_after_days?: number
 }
 
 export default function ProductManagement() {
