@@ -252,6 +252,16 @@ export default function AdminPanel() {
               </svg>
               Notificações
             </button>
+            <button
+              onClick={() => router.push('/admin/pwa-debug')}
+              className="px-4 py-2 bg-zinc-800 text-white rounded hover:bg-zinc-700 transition flex items-center gap-2"
+              title="Debug PWA"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+              </svg>
+              Debug
+            </button>
             <button onClick={() => router.push('/home')} className="text-gray-400 hover:text-primary">
               Ver Home
             </button>

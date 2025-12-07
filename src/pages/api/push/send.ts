@@ -30,9 +30,18 @@ export default async function handler(
 
   try {
     // Verificar se as VAPID keys estão configuradas
+    console.log('[PUSH] Verificando VAPID keys...')
+    console.log('[PUSH] Public key presente:', !!vapidPublicKey)
+    console.log('[PUSH] Private key presente:', !!vapidPrivateKey)
+
     if (!vapidPublicKey || !vapidPrivateKey) {
+      console.error('[PUSH] VAPID keys não configuradas!')
       return res.status(500).json({
-        error: 'VAPID keys não configuradas. Execute: npx web-push generate-vapid-keys'
+        error: 'VAPID keys não configuradas. Execute: npx web-push generate-vapid-keys',
+        debug: {
+          hasPublicKey: !!vapidPublicKey,
+          hasPrivateKey: !!vapidPrivateKey
+        }
       })
     }
 
@@ -42,17 +51,22 @@ export default async function handler(
       return res.status(400).json({ error: 'Title and body are required' })
     }
 
+    console.log('[PUSH] Buscando subscriptions...')
+
     // Buscar todas as subscriptions ativas
     const { data: subscriptions, error: fetchError } = await supabase
       .from('push_subscriptions')
       .select('*')
 
     if (fetchError) {
-      console.error('Erro ao buscar subscriptions:', fetchError)
+      console.error('[PUSH] Erro ao buscar subscriptions:', fetchError)
       return res.status(500).json({ error: 'Failed to fetch subscriptions' })
     }
 
+    console.log('[PUSH] Subscriptions encontradas:', subscriptions?.length || 0)
+
     if (!subscriptions || subscriptions.length === 0) {
+      console.warn('[PUSH] Nenhuma subscription encontrada')
       return res.status(200).json({
         message: 'No subscriptions found',
         sent: 0,
@@ -72,10 +86,14 @@ export default async function handler(
     let failureCount = 0
     const failedEndpoints: string[] = []
 
+    console.log('[PUSH] Enviando notificações...')
+    console.log('[PUSH] Payload:', payload)
+
     // Enviar notificação para cada subscription
-    const sendPromises = subscriptions.map(async (sub) => {
+    const sendPromises = subscriptions.map(async (sub, index) => {
       try {
         const subscription = sub.subscription as any
+        console.log(`[PUSH] Enviando para subscription ${index + 1}/${subscriptions.length}...`)
 
         await webpush.sendNotification(
           {
@@ -85,14 +103,17 @@ export default async function handler(
           JSON.stringify(payload)
         )
 
+        console.log(`[PUSH] ✓ Enviado com sucesso para ${index + 1}`)
         successCount++
       } catch (error: any) {
-        console.error('Erro ao enviar push para', sub.endpoint, error)
+        console.error(`[PUSH] ✗ Erro ao enviar para subscription ${index + 1}:`, error.message)
+        console.error('[PUSH] Detalhes do erro:', error)
         failureCount++
         failedEndpoints.push(sub.endpoint)
 
         // Se a subscription expirou (410), remove do banco
         if (error.statusCode === 410) {
+          console.log('[PUSH] Removendo subscription expirada...')
           await supabase
             .from('push_subscriptions')
             .delete()
@@ -102,6 +123,8 @@ export default async function handler(
     })
 
     await Promise.all(sendPromises)
+
+    console.log('[PUSH] Resumo:', { total: subscriptions.length, sucesso: successCount, falhas: failureCount })
 
     // Atualizar estatísticas da notificação
     if (notificationId) {
