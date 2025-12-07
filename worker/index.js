@@ -1,19 +1,12 @@
-// Custom Service Worker para notificações push
+// Service Worker customizado para PWA com Push Notifications
+// Este arquivo é usado como template pelo next-pwa
 
-// Importar o service worker gerado pelo next-pwa
-self.addEventListener('install', (event) => {
-  console.log('Service Worker installing.')
-  self.skipWaiting()
-})
+// Importar o workbox gerado pelo next-pwa
+importScripts('workbox-sw.js');
 
-self.addEventListener('activate', (event) => {
-  console.log('Service Worker activating.')
-  event.waitUntil(clients.claim())
-})
-
-// Escutar eventos de push notification
+// Event listener para notificações push
 self.addEventListener('push', (event) => {
-  console.log('Push notification received:', event)
+  console.log('[SW] Push notification received:', event)
 
   let notificationData = {
     title: 'Nova Notificação',
@@ -27,7 +20,7 @@ self.addEventListener('push', (event) => {
     try {
       notificationData = event.data.json()
     } catch (error) {
-      console.error('Error parsing notification data:', error)
+      console.error('[SW] Error parsing notification data:', error)
       notificationData.body = event.data.text()
     }
   }
@@ -44,13 +37,11 @@ self.addEventListener('push', (event) => {
     actions: [
       {
         action: 'open',
-        title: 'Abrir',
-        icon: '/icons/icon-192.png'
+        title: 'Abrir'
       },
       {
         action: 'close',
-        title: 'Fechar',
-        icon: '/icons/icon-192.png'
+        title: 'Fechar'
       }
     ],
     tag: 'lowzingo-notification',
@@ -63,9 +54,9 @@ self.addEventListener('push', (event) => {
   )
 })
 
-// Escutar cliques na notificação
+// Event listener para cliques na notificação
 self.addEventListener('notificationclick', (event) => {
-  console.log('Notification clicked:', event)
+  console.log('[SW] Notification clicked:', event)
 
   event.notification.close()
 
@@ -79,7 +70,7 @@ self.addEventListener('notificationclick', (event) => {
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       // Verificar se já existe uma janela aberta
       for (const client of clientList) {
-        if (client.url === urlToOpen && 'focus' in client) {
+        if (client.url.includes(urlToOpen) && 'focus' in client) {
           return client.focus()
         }
       }
@@ -92,7 +83,7 @@ self.addEventListener('notificationclick', (event) => {
   )
 })
 
-// Escutar quando a notificação é fechada
+// Event listener quando a notificação é fechada
 self.addEventListener('notificationclose', (event) => {
-  console.log('Notification closed:', event)
+  console.log('[SW] Notification closed:', event)
 })
