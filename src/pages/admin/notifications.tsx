@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseAuth } from '@/lib/supabase'
 
 interface PushNotification {
   id: string
@@ -31,14 +31,17 @@ export default function AdminNotifications() {
   const [showSuccess, setShowSuccess] = useState(false)
 
   useEffect(() => {
-    const adminData = localStorage.getItem('admin')
-    if (!adminData) {
+    checkAuth()
+  }, [router])
+
+  const checkAuth = async () => {
+    const { data: { session } } = await supabaseAuth.auth.getSession()
+    if (!session) {
       router.push('/admin/login')
       return
     }
-
     loadData()
-  }, [router])
+  }
 
   const loadData = async () => {
     // Carregar contagem de inscritos
@@ -84,8 +87,7 @@ export default function AdminNotifications() {
     setSending(true)
 
     try {
-      const adminData = localStorage.getItem('admin')
-      const admin = adminData ? JSON.parse(adminData) : null
+      const { data: { session } } = await supabaseAuth.auth.getSession()
 
       // Criar registro da notificação
       const { data: notification, error: createError } = await supabase
@@ -94,7 +96,7 @@ export default function AdminNotifications() {
           title,
           body,
           url,
-          sent_by: admin?.id,
+          sent_by: session?.user?.id || null,
           status: 'sending'
         })
         .select()
