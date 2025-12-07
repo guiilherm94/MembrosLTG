@@ -1,8 +1,119 @@
 // Service Worker customizado para PWA com Push Notifications
 // Este arquivo é usado como template pelo next-pwa
 
-// Importar o workbox gerado pelo next-pwa
-importScripts('workbox-sw.js');
+// Importar workbox libraries
+importScripts('https://storage.googleapis.com/workbox-cdn/releases/6.5.4/workbox-sw.js');
+
+// Configurar Workbox
+workbox.setConfig({ debug: false });
+
+// Precache assets do Next.js (injetado automaticamente pelo next-pwa)
+workbox.precaching.precacheAndRoute(self.__WB_MANIFEST || []);
+
+// Runtime caching strategies
+const { registerRoute } = workbox.routing;
+const { CacheFirst, StaleWhileRevalidate, NetworkFirst } = workbox.strategies;
+const { ExpirationPlugin } = workbox.expiration;
+
+// Cache para Google Fonts
+registerRoute(
+  /^https:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/i,
+  new CacheFirst({
+    cacheName: 'google-fonts',
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 4,
+        maxAgeSeconds: 365 * 24 * 60 * 60 // 365 days
+      })
+    ]
+  })
+);
+
+// Cache para fontes estáticas
+registerRoute(
+  /\.(?:eot|otf|ttc|ttf|woff|woff2|font.css)$/i,
+  new StaleWhileRevalidate({
+    cacheName: 'static-font-assets',
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 4,
+        maxAgeSeconds: 7 * 24 * 60 * 60 // 7 days
+      })
+    ]
+  })
+);
+
+// Cache para imagens
+registerRoute(
+  /\.(?:jpg|jpeg|gif|png|svg|ico|webp)$/i,
+  new StaleWhileRevalidate({
+    cacheName: 'static-image-assets',
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 64,
+        maxAgeSeconds: 24 * 60 * 60 // 24 hours
+      })
+    ]
+  })
+);
+
+// Cache para JavaScript
+registerRoute(
+  /\.(?:js)$/i,
+  new StaleWhileRevalidate({
+    cacheName: 'static-js-assets',
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 32,
+        maxAgeSeconds: 24 * 60 * 60 // 24 hours
+      })
+    ]
+  })
+);
+
+// Cache para CSS
+registerRoute(
+  /\.(?:css|less)$/i,
+  new StaleWhileRevalidate({
+    cacheName: 'static-style-assets',
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 32,
+        maxAgeSeconds: 24 * 60 * 60 // 24 hours
+      })
+    ]
+  })
+);
+
+// Cache para APIs
+registerRoute(
+  /\/api\/.*$/i,
+  new NetworkFirst({
+    cacheName: 'apis',
+    networkTimeoutSeconds: 10,
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 16,
+        maxAgeSeconds: 24 * 60 * 60 // 24 hours
+      })
+    ]
+  })
+);
+
+// Cache para outras requisições
+registerRoute(
+  /.*/i,
+  new NetworkFirst({
+    cacheName: 'others',
+    networkTimeoutSeconds: 10,
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 32,
+        maxAgeSeconds: 24 * 60 * 60 // 24 hours
+      })
+    ]
+  })
+);
 
 // Event listener para notificações push
 self.addEventListener('push', (event) => {
