@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { supabaseAdminAdmin } from '@/lib/supabaseAdmin'
+import { supabaseAdmin } from '@/lib/supabase'
 import bcrypt from 'bcryptjs'
 
 // Estrutura de webhook suportando múltiplas plataformas
@@ -49,7 +49,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Buscar produto pelo webhook_secret
-    const { data: product, error: productError } = await supabaseAdminAdmin
+    const { data: product, error: productError } = await supabaseAdmin
       .from('products')
       .select('id, name, enabled_platforms, enable_access_removal')
       .eq('webhook_secret', secret)
