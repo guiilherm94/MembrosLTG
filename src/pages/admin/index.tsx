@@ -59,6 +59,7 @@ export default function AdminPanel() {
     description: '',
     bannerUrl: '',
     saleUrl: '',
+    isActive: true,
     isHidden: false,
     unlockAfterDays: 0
   })
@@ -171,7 +172,7 @@ export default function AdminPanel() {
 
     setShowProductModal(false)
     setEditingProduct(null)
-    setProductForm({ name: '', description: '', bannerUrl: '', saleUrl: '', isHidden: false, unlockAfterDays: 0 })
+    setProductForm({ name: '', description: '', bannerUrl: '', saleUrl: '', isActive: true, isHidden: false, unlockAfterDays: 0 })
     loadProducts()
   }
 
@@ -219,6 +220,7 @@ export default function AdminPanel() {
       description: product.description || '',
       bannerUrl: product.banner_url || '',
       saleUrl: product.sale_url || '',
+      isActive: product.is_active !== undefined ? product.is_active : true,
       isHidden: product.is_hidden || false,
       unlockAfterDays: product.unlock_after_days || 0
     })
@@ -313,7 +315,7 @@ export default function AdminPanel() {
               <button
                 onClick={() => {
                   setEditingProduct(null)
-                  setProductForm({ name: '', description: '', bannerUrl: '', saleUrl: '', isHidden: false, unlockAfterDays: 0 })
+                  setProductForm({ name: '', description: '', bannerUrl: '', saleUrl: '', isActive: true, isHidden: false, unlockAfterDays: 0 })
                   setShowProductModal(true)
                 }}
                 className="px-4 py-2 bg-primary text-black rounded font-semibold hover:bg-primary-dark transition"
@@ -742,7 +744,20 @@ export default function AdminPanel() {
                 />
               </div>
 
-              <div className="border-t border-zinc-800 pt-4">
+              <div className="border-t border-zinc-800 pt-4 space-y-4">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={productForm.isActive}
+                    onChange={(e) => setProductForm({ ...productForm, isActive: e.target.checked })}
+                    className="w-4 h-4"
+                  />
+                  <div>
+                    <span className="text-sm font-semibold">✓ Produto Ativo</span>
+                    <p className="text-xs text-gray-400">Produto ativo aparece para todos os usuários</p>
+                  </div>
+                </label>
+
                 <label className="flex items-center gap-3 cursor-pointer">
                   <input
                     type="checkbox"
