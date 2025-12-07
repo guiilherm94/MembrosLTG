@@ -1,0 +1,7 @@
+{
+  "customer_email": "teste.webhook@email.com",
+  "customer_name": "João da Silva Teste",
+  "customer_phone": "+5511987654321",
+  "membership_product_id": "SUBSTITUA_PELO_ID_DO_PRODUTO",
+  "status": "approved"
+}
