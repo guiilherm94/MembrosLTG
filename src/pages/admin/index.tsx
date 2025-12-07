@@ -43,7 +43,9 @@ export default function AdminPanel() {
     whatsappUrl: '',
     instagramUrl: '',
     youtubeUrl: '',
-    supportPageContent: ''
+    supportPageContent: '',
+    passwordType: 'default',
+    defaultPassword: 'senha123'
   })
 
   const [userForm, setUserForm] = useState({
@@ -101,7 +103,9 @@ export default function AdminPanel() {
         whatsappUrl: data.whatsapp_url || '',
         instagramUrl: data.instagram_url || '',
         youtubeUrl: data.youtube_url || '',
-        supportPageContent: data.support_page_content || ''
+        supportPageContent: data.support_page_content || '',
+        passwordType: data.password_type || 'default',
+        defaultPassword: data.default_password || 'senha123'
       })
     }
   }
@@ -536,6 +540,81 @@ export default function AdminPanel() {
                     >
                       <p className="text-sm font-semibold">☀️ Modo Claro</p>
                     </button>
+                  </div>
+                </div>
+
+                <hr className="border-zinc-700" />
+
+                {/* Configurações de Senha para Novos Usuários */}
+                <div>
+                  <h3 className="text-lg font-bold mb-4">🔑 Senha para Novos Usuários (Webhook)</h3>
+                  <p className="text-sm text-gray-400 mb-4">Configure como as senhas serão geradas para usuários criados via webhook (CartPanda, etc.)</p>
+
+                  <div className="space-y-4">
+                    <label className="block">
+                      <div className="flex items-center gap-3 cursor-pointer p-4 rounded-lg border-2 transition hover:bg-zinc-800" onClick={() => setSettings({ ...settings, passwordType: 'default' })}>
+                        <input
+                          type="radio"
+                          name="passwordType"
+                          value="default"
+                          checked={settings.passwordType === 'default'}
+                          onChange={(e) => setSettings({ ...settings, passwordType: e.target.value })}
+                          className="w-5 h-5"
+                        />
+                        <div className="flex-1">
+                          <p className="font-semibold">Senha Padrão (Recomendado)</p>
+                          <p className="text-xs text-gray-500">Todos os usuários recebem a mesma senha configurada abaixo</p>
+                        </div>
+                      </div>
+                    </label>
+
+                    {settings.passwordType === 'default' && (
+                      <div className="ml-8">
+                        <label className="block text-sm font-semibold mb-2">Senha Padrão</label>
+                        <input
+                          type="text"
+                          value={settings.defaultPassword}
+                          onChange={(e) => setSettings({ ...settings, defaultPassword: e.target.value })}
+                          className="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2"
+                          placeholder="senha123"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Esta será a senha de todos os novos usuários criados via webhook</p>
+                      </div>
+                    )}
+
+                    <label className="block">
+                      <div className="flex items-center gap-3 cursor-pointer p-4 rounded-lg border-2 transition hover:bg-zinc-800" onClick={() => setSettings({ ...settings, passwordType: 'temporary' })}>
+                        <input
+                          type="radio"
+                          name="passwordType"
+                          value="temporary"
+                          checked={settings.passwordType === 'temporary'}
+                          onChange={(e) => setSettings({ ...settings, passwordType: e.target.value })}
+                          className="w-5 h-5"
+                        />
+                        <div className="flex-1">
+                          <p className="font-semibold">Senha Temporária Aleatória</p>
+                          <p className="text-xs text-gray-500">Gera uma senha aleatória única para cada usuário (ex: w82zmgj1FZUM)</p>
+                        </div>
+                      </div>
+                    </label>
+
+                    <label className="block">
+                      <div className="flex items-center gap-3 cursor-pointer p-4 rounded-lg border-2 transition hover:bg-zinc-800" onClick={() => setSettings({ ...settings, passwordType: 'email' })}>
+                        <input
+                          type="radio"
+                          name="passwordType"
+                          value="email"
+                          checked={settings.passwordType === 'email'}
+                          onChange={(e) => setSettings({ ...settings, passwordType: e.target.value })}
+                          className="w-5 h-5"
+                        />
+                        <div className="flex-1">
+                          <p className="font-semibold">Email como Senha</p>
+                          <p className="text-xs text-gray-500">Usa o email do usuário como senha (tudo em minúsculo)</p>
+                        </div>
+                      </div>
+                    </label>
                   </div>
                 </div>
 

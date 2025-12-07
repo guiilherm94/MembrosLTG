@@ -83,6 +83,8 @@ CREATE TABLE site_settings (
   instagram_url TEXT,
   youtube_url TEXT,
   support_page_content TEXT,
+  password_type TEXT DEFAULT 'default' CHECK (password_type IN ('default', 'temporary', 'email')),
+  default_password TEXT DEFAULT 'senha123',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

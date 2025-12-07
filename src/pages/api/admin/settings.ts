@@ -16,7 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === 'PUT') {
-    const { systemName, logoUrl, bannerUrl, colorScheme, defaultTheme, whatsappUrl, instagramUrl, youtubeUrl, supportPageContent } = req.body
+    const { systemName, logoUrl, bannerUrl, colorScheme, defaultTheme, whatsappUrl, instagramUrl, youtubeUrl, supportPageContent, passwordType, defaultPassword } = req.body
 
     const { data: existing } = await supabaseAdmin
       .from('site_settings')
@@ -36,6 +36,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (instagramUrl !== undefined) updateData.instagram_url = instagramUrl
     if (youtubeUrl !== undefined) updateData.youtube_url = youtubeUrl
     if (supportPageContent !== undefined) updateData.support_page_content = supportPageContent
+    if (passwordType !== undefined) updateData.password_type = passwordType
+    if (defaultPassword !== undefined) updateData.default_password = defaultPassword
 
     if (existing) {
       const { data, error } = await supabaseAdmin
@@ -63,6 +65,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             instagram_url: instagramUrl,
             youtube_url: youtubeUrl,
             support_page_content: supportPageContent,
+            password_type: passwordType || 'default',
+            default_password: defaultPassword || 'senha123',
           },
         ])
         .select()

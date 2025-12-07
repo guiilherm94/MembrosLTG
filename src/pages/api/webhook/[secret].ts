@@ -211,10 +211,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
-    // Criar novo usuário
-    const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).toUpperCase().slice(-4)
-    const hashedPassword = await bcrypt.hash(tempPassword, 10)
+    // Buscar configurações de senha
+    const { data: settings } = await supabaseAdmin
+      .from('site_settings')
+      .select('password_type, default_password')
+      .single()
 
+    // Gerar senha baseada na configuração
+    let password: string
+    const passwordType = settings?.password_type || 'default'
+
+    switch (passwordType) {
+      case 'email':
+        password = email.toLowerCase()
+        break
+      case 'temporary':
+        password = Math.random().toString(36).slice(-8) + Math.random().toString(36).toUpperCase().slice(-4)
+        break
+      case 'default':
+      default:
+        password = settings?.default_password || 'senha123'
+        break
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10)
+
+    // Criar novo usuário
     const { data: newUser, error: createError } = await supabaseAdmin
       .from('users')
       .insert([
@@ -237,7 +259,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
     }
 
-    console.log(`Novo usuário criado: ${email} com produto ${product.name}`)
+    console.log(`Novo usuário criado: ${email} com produto ${product.name} (tipo senha: ${passwordType})`)
 
     // Em produção, aqui você enviaria um email com as credenciais
     return res.status(201).json({
@@ -246,8 +268,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       message: 'Usuário criado com sucesso',
       user_email: email,
       product: product.name,
-      // REMOVER EM PRODUÇÃO - apenas para testes
-      temp_password: tempPassword
+      password_type: passwordType,
+      // Retorna a senha apenas para fins de debug/email
+      password: password
     })
 
   } catch (error) {
