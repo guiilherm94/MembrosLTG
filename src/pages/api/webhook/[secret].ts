@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
 import bcrypt from 'bcryptjs'
 
 // Estrutura de webhook suportando múltiplas plataformas
@@ -49,7 +49,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Buscar produto pelo webhook_secret
-    const { data: product, error: productError } = await supabase
+    const { data: product, error: productError } = await supabaseAdmin
       .from('products')
       .select('id, name, enabled_platforms, enable_access_removal')
       .eq('webhook_secret', secret)
@@ -124,7 +124,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (isRemovalEvent && product.enable_access_removal) {
       // Remover acesso ao produto
-      const { data: existingUser } = await supabase
+      const { data: existingUser } = await supabaseAdmin
         .from('users')
         .select('*')
         .eq('email', email)
@@ -134,7 +134,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const currentProductIds = existingUser.product_ids || []
         const updatedProductIds = currentProductIds.filter((id: string) => id !== product.id)
 
-        await supabase
+        await supabaseAdmin
           .from('users')
           .update({
             product_ids: updatedProductIds,
@@ -168,7 +168,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Verificar se usuário já existe
-    const { data: existingUser } = await supabase
+    const { data: existingUser } = await supabaseAdmin
       .from('users')
       .select('*')
       .eq('email', email)
@@ -181,7 +181,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!currentProductIds.includes(product.id)) {
         const updatedProductIds = [...currentProductIds, product.id]
 
-        await supabase
+        await supabaseAdmin
           .from('users')
           .update({
             product_ids: updatedProductIds,
@@ -215,7 +215,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).toUpperCase().slice(-4)
     const hashedPassword = await bcrypt.hash(tempPassword, 10)
 
-    const { data: newUser, error: createError } = await supabase
+    const { data: newUser, error: createError } = await supabaseAdmin
       .from('users')
       .insert([
         {
