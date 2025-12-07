@@ -87,8 +87,6 @@ export default function AdminNotifications() {
     setSending(true)
 
     try {
-      const { data: { session } } = await supabaseAuth.auth.getSession()
-
       // Criar registro da notificação
       const { data: notification, error: createError } = await supabase
         .from('push_notifications')
@@ -96,7 +94,6 @@ export default function AdminNotifications() {
           title,
           body,
           url,
-          sent_by: session?.user?.id || null,
           status: 'sending'
         })
         .select()
