@@ -11,8 +11,23 @@ const withPWA = require('next-pwa')({
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ['drive.google.com', 'lh3.googleusercontent.com', 'img.youtube.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'drive.google.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'img.youtube.com',
+      },
+    ],
   },
+  // Configuração vazia para silenciar warning do Turbopack com next-pwa
+  turbopack: {},
 }
 
 module.exports = withPWA(nextConfig)
