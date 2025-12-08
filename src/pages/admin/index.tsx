@@ -96,6 +96,12 @@ export default function AdminPanel() {
     checkAuth()
   }, [])
 
+  useEffect(() => {
+    if (activeTab === 'notifications') {
+      loadNotifications()
+    }
+  }, [activeTab])
+
   const checkAuth = async () => {
     const { data: { session } } = await supabaseAuth.auth.getSession()
     if (!session) {
@@ -149,20 +155,34 @@ export default function AdminPanel() {
   }
 
   const loadNotifications = async () => {
-    const { count } = await supabase
-      .from('push_subscriptions')
-      .select('*', { count: 'exact', head: true })
+    try {
+      // Buscar contagem de inscritos - usando query diferente
+      const { data: subsData, count, error: countError } = await supabase
+        .from('push_subscriptions')
+        .select('id', { count: 'exact' })
 
-    setSubscribersCount(count || 0)
+      if (countError) {
+        console.error('Erro ao buscar contagem de inscritos:', countError)
+        setSubscribersCount(0)
+      } else {
+        console.log('Contagem de inscritos:', count)
+        setSubscribersCount(count || 0)
+      }
 
-    const { data } = await supabase
-      .from('push_notifications')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(10)
+      // Buscar histórico de notificações
+      const { data, error: dataError } = await supabase
+        .from('push_notifications')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(10)
 
-    if (data) {
-      setNotifications(data)
+      if (dataError) {
+        console.error('Erro ao buscar notificações:', dataError)
+      } else if (data) {
+        setNotifications(data)
+      }
+    } catch (error) {
+      console.error('Erro geral ao carregar notificações:', error)
     }
   }
 
