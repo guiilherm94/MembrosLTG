@@ -299,7 +299,7 @@ export default function Home() {
             <h3 className="text-2xl font-bold mb-6">Cursos Disponíveis</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {lockedProducts.map((product) => (
-                <div key={product.id} className="relative bg-zinc-900 rounded-lg overflow-hidden border border-zinc-800 opacity-60 group">
+                <div key={product.id} className="relative bg-zinc-900 rounded-lg overflow-hidden border border-zinc-800 group">
                   {product.banner_url ? (
                     <div className="aspect-video bg-zinc-800 overflow-hidden">
                       <img
@@ -322,21 +322,25 @@ export default function Home() {
                     </div>
                     <p className="text-xs text-gray-400">0%</p>
                   </div>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 group-hover:bg-black/80 transition">
-                    <svg className="w-12 h-12 text-gray-500 mb-3" fill="currentColor" viewBox="0 0 20 20">
+                  {/* Cadeado no canto superior direito */}
+                  <div className="absolute top-3 right-3 bg-black/50 rounded-full p-2">
+                    <svg className="w-6 h-6 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                     </svg>
-                    {product.sale_url && (
+                  </div>
+                  {/* Overlay suave apenas no hover com botão */}
+                  {product.sale_url && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/0 group-hover:bg-black/60 transition-all opacity-0 group-hover:opacity-100">
                       <a
                         href={product.sale_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="px-6 py-2 bg-primary text-black font-bold rounded hover:bg-primary-dark transition"
+                        className="px-6 py-2 bg-primary text-black font-bold rounded hover:bg-primary/90 transition"
                       >
                         Adquirir Acesso
                       </a>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
