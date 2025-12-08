@@ -261,6 +261,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     console.log(`Novo usuário criado: ${email} com produto ${product.name} (tipo senha: ${passwordType})`)
 
+    // Log da senha apenas no servidor (não vai para a resposta HTTP)
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[DEV] Senha gerada: ${password}`)
+    }
+
     // Em produção, aqui você enviaria um email com as credenciais
     return res.status(201).json({
       success: true,
@@ -269,8 +274,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       user_email: email,
       product: product.name,
       password_type: passwordType,
-      // Retorna a senha apenas para fins de debug/email
-      password: password
+      // Retorna a senha APENAS em desenvolvimento para debug
+      ...(process.env.NODE_ENV === 'development' && { password: password })
     })
 
   } catch (error) {
