@@ -369,6 +369,27 @@ export default function AdminPanel() {
       setTimeout(() => setShowSuccess(false), 5000)
 
       await loadNotifications()
+
+      // Deletar notificações antigas (manter apenas as últimas 10)
+      const { data: allNotifications } = await supabase
+        .from('push_notifications')
+        .select('id, created_at')
+        .order('created_at', { ascending: false })
+
+      if (allNotifications && allNotifications.length > 10) {
+        const notificationsToDelete = allNotifications.slice(10).map(n => n.id)
+
+        const { error: deleteError } = await supabase
+          .from('push_notifications')
+          .delete()
+          .in('id', notificationsToDelete)
+
+        if (deleteError) {
+          console.error('Erro ao deletar notificações antigas:', deleteError)
+        } else {
+          console.log(`${notificationsToDelete.length} notificações antigas deletadas`)
+        }
+      }
     } catch (error: any) {
       console.error('Erro ao enviar notificação:', error)
       alert('Erro ao enviar notificação: ' + error.message)
