@@ -6,6 +6,7 @@ import { useSettings } from '@/hooks/useSettings'
 import { getDriveDirectView } from '@/lib/media-converter'
 import ThemeToggle from '@/components/ThemeToggle'
 import PushNotificationPrompt from '@/components/PushNotificationPrompt'
+import PWAInstallPrompt from '@/components/PWAInstallPrompt'
 
 interface Product {
   id: string
@@ -384,6 +385,9 @@ export default function Home() {
 
       {/* Prompt de notificações push */}
       <PushNotificationPrompt />
+
+      {/* Prompt de instalação PWA */}
+      <PWAInstallPrompt />
     </div>
   )
 }
